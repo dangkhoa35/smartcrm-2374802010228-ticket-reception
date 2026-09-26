@@ -49,7 +49,7 @@ Luồng nghiệp vụ: **L02 - Tiếp nhận và phân loại yêu cầu bảo h
 
 ## 4. Cấu trúc thư mục
 
-\\\	ext
+```text
 smartcrm-2374802010228-ticket-reception/
 ├── data/              # Dữ liệu mẫu, các file script SQL khởi tạo DB
 ├── docs/              # Tài liệu đặc tả, hình ảnh minh chứng Smoke Test
@@ -64,8 +64,7 @@ smartcrm-2374802010228-ticket-reception/
 ├── .gitignore          # Danh sách file/thư mục bỏ qua khi push Git
 ├── package.json       # Khai báo thông tin dự án và các thư viện npm
 └── README.md          # Tài liệu hướng dẫn dự án
-\\\
-
+```
 ---
 
 ## 5. Hướng dẫn cài đặt & chạy
@@ -77,41 +76,41 @@ smartcrm-2374802010228-ticket-reception/
 ### Các bước khởi chạy:
 
 1. **Clone repository và di chuyển vào thư mục dự án:**
-   \\\ash
+    ```bash
    git clone https://github.com/dangkhoa35/smartcrm-2374802010228-ticket-reception.git
    cd smartcrm-2374802010228-ticket-reception
-   \\\
+    ```
 
 2. **Cài đặt các gói phụ thuộc (Dependencies):**
-   \\\ash
+   ```bash
    npm install
-   \\\
+   ```
 
 3. **Cấu hình biến môi trường:**
    Tạo file \.env\ từ \.env.example\ và điều chỉnh thông số kết nối CSDL MySQL:
-   \\\ash
+   ```bash
    cp .env.example .env
-   \\\
+   ```
    *Cấu hình mẫu trong file \.env\:*
-   \\\env
+   ```env
    DB_HOST=127.0.0.1
    DB_PORT=3306
    DB_NAME=smartcrm
    DB_USER=root
    DB_PASSWORD=
    PORT=3000
-   \\\
+   ```
 
 4. **Tạo Cơ sở dữ liệu:**
    Đảm bảo MySQL đang chạy và tạo database \smartcrm\:
-   \\\sql
+   ```sql
    CREATE DATABASE IF NOT EXISTS smartcrm CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;
-   \\\
+   ```
 
 5. **Khởi chạy ứng dụng ở chế độ Phát triển (Development):**
-   \\\ash
+   ```bash
    npm run dev
-   \\\
+   ```
 
 6. **Kiểm tra hoạt động (Smoke Test):**
    - Truy cập trang chủ: [http://localhost:3000/](http://localhost:3000/) $\rightarrow$ Trả về \Hello Smart CRM\
@@ -123,6 +122,5 @@ smartcrm-2374802010228-ticket-reception/
 
 | Công cụ | Dùng vào việc gì | Cách tự kiểm chứng |
 |---|---|---|
-| **Gemini / ChatGPT** | Tối ưu hóa file cấu hình (\.gitignore\, \.env.example\), hỗ trợ viết script khởi tạo Node.js + Express và giải quyết lỗi kết nối CSDL MySQL. | Tự chạy thử lệnh \
-pm run dev\, thực hiện Smoke Test trên trình duyệt tại cổng \3000\ và đối chiếu dữ liệu trả về từ MySQL (\/db-check\). |
+| **Gemini / ChatGPT** | Tối ưu hóa file cấu hình (.gitignore, .env.example), hỗ trợ viết script khởi tạo Node.js + Express và giải quyết lỗi kết nối CSDL MySQL. | Tự chạy thử lệnh npm run dev, thực hiện Smoke Test trên trình duyệt tại cổng 3000 và đối chiếu dữ liệu trả về từ MySQL (/db-check). |
 | **GitHub Copilot** | Gợi ý cú pháp mã nguồn Node.js, viết các hàm xử lý truy vấn MySQL (\mysql2/promise\) và tạo dữ liệu kiểm thử. | Chạy thử nghiệm kiểm thử đơn vị (Unit tests), đối chiếu kết quả trả về với yêu cầu đặc tả của đề bài. |
