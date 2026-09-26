@@ -1,0 +1,31 @@
+{
+  "name": "smartcrm-2374802010228-ticket-reception",
+  "version": "1.0.0",
+  "description": "Sinh viên: Hà Đăng Khoa - 2374802010228 <br>\r Học phần: Chuyên đề Tốt nghiệp 1, HK1 2026-2027 <br>\r Track SE - Luồng nghiệp vụ: L02 - Tiếp nhận và phân loại yêu cầu bảo hành",
+  "main": "index.js",
+  "directories": {
+    "doc": "docs",
+    "test": "tests"
+  },
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1",
+    "dev": "node src/index.js"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/dangkhoa35/smartcrm-2374802010228-ticket-reception.git"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "type": "commonjs",
+  "bugs": {
+    "url": "https://github.com/dangkhoa35/smartcrm-2374802010228-ticket-reception/issues"
+  },
+  "homepage": "https://github.com/dangkhoa35/smartcrm-2374802010228-ticket-reception#readme",
+  "dependencies": {
+    "dotenv": "^18.0.4",
+    "express": "^5.2.1",
+    "mysql2": "^3.24.4"
+  }
+}
