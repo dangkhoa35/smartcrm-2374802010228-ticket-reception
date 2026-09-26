@@ -11,8 +11,8 @@ Hệ thống SmartCRM hỗ trợ tiếp nhận, phân loại vầ theo dõi các
 ## 2. Công nghệ sử dụng (Track SE - Luồng A)
 - Ngôn ngữ / runtime: Node.js 20 LTS
 - Framework API: Express.js
-- Truy cập dữ liệu: Prisma / Sequelize
-- Cỡ sở dữ liệu: PostgreSQL 16
+- Truy cập dữ liệu: mysql2 / Prisma
+- Cỡ sở dữ liệu: MySQL 8.0 (Port 3306)
 - Giao diện: React (Vite)
 - Kiểm thử: Jest / Vitest
 - Tài liệu API: Swagger UI
@@ -31,5 +31,6 @@ Hệ thống SmartCRM hỗ trợ tiếp nhận, phân loại vầ theo dõi các
 
 ## 5. Trang thai hien tai
 - [x] Khoi tao project, setup gitignore, env.example va README khung (Buoi 2)
+- [x] Kiem tra moi truong A.1 ^(Tools^), A.2 ^(MySQL^), A.3 ^(Node.js + Express Smoke Test^)
 - [ ] Xay dung API tiep nhan yeu cau (Buoi 8-10)
 - [ ] Xay dung module phan loai ticket (Buoi 10-12)
