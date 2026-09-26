@@ -1,26 +1,27 @@
 # SmartCRM - Tiep nhan va phan loai yeu cau bao hanh
 
-Sinh vien: Ha Dang Khoa - 2374802010228
-Hoc phan: Chuyen de Tot nghiep 1, HK1 2026-2027
-Track SE - Luong nghiep vu: L02 - Tiep nhan va phan loai yeu cau bao hanh
+Sinh viên: Hà Đăng Khoa - 2374802010228 <br>
+Học phần: Chuyên đề Tốt nghiệp 1, HK1 2026-2027 <br>
+Track SE - Luồng nghiệp vụ: L02 - Tiếp nhận và phân loại yêu cầu bảo hành
 
-## 1. Muc tieu
-He thong SmartCRM ho tro tiep nhan, phan loai va theo doi cac yeu cau bao hanh tu khach hang mot cach tu dong va toi uu quy trinh xu ly.
+## 1. Mục tiêu
 
-## 2. Cong nghe su dung (Track SE - Luong A)
-- Ngon ngu / runtime: Node.js 20 LTS
+Hệ thống SmartCRM hỗ trợ tiếp nhận, phân loại vầ theo dõi các yêu cầu bảo hành từ khách hàng một cách tự động và tối ưu quy trình xử lý.
+
+## 2. Công nghệ sử dụng (Track SE - Luồng A)
+- Ngôn ngữ / runtime: Node.js 20 LTS
 - Framework API: Express.js
-- Truy cap du lieu: Prisma / Sequelize
-- Co so du lieu: PostgreSQL 16
-- Giao dien: React (Vite)
-- Kiem thu: Jest / Vitest
-- Tai lieu API: Swagger UI
-- Dong goi: Dockerfile + docker-compose
+- Truy cập dữ liệu: Prisma / Sequelize
+- Cỡ sở dữ liệu: PostgreSQL 16
+- Giao diện: React (Vite)
+- Kiểm thử: Jest / Vitest
+- Tài liệu API: Swagger UI
+- Đóng gói: Dockerfile + docker-compose
 
 ## 3. Huong dan chay
-cp .env.example .env
-npm install
-npm run dev
+- cp .env.example .env
+- npm install
+- npm run dev
 
 ## 4. Cau truc thu muc
 - docs/: Chua tai lieu dac ta va minh chung
