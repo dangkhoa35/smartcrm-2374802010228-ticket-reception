@@ -20,10 +20,10 @@ Luồng nghiệp vụ: **L02 - Tiếp nhận và phân loại yêu cầu bảo h
 
 ### - Làm (In Scope):
 - Thiết lập RESTful API tiếp nhận thông tin yêu cầu bảo hành từ khách hàng/CSKH.
-- Lưu trữ thông tin yêu cầu bảo hành vào cơ sở dữ liệu MySQL (\smartcrm\).
+- Lưu trữ thông tin yêu cầu bảo hành vào cơ sở dữ liệu PostgreSQL (`smartcrm`).
 - Phân loại yêu cầu bảo hành theo danh mục (Lỗi phần cứng, Lỗi phần mềm, Hướng dẫn sử dụng) và mức độ ưu tiên.
 - Định tuyến tự động ticket đến nhân viên/bộ phận kĩ thuật phù hợp.
-- Cung cấp API kiểm tra trạng thái môi trường (\/health\, \/db-check\).
+- Cung cấp API kiểm tra trạng thái môi trường (`/`, `/db-check`).
 
 ### - Không làm (Out of Scope):
 - Tích hợp thanh toán linh kiện bảo hành trực tuyến.
@@ -38,8 +38,8 @@ Luồng nghiệp vụ: **L02 - Tiếp nhận và phân loại yêu cầu bảo h
 |---|---|
 | Ngôn ngữ / Runtime | Node.js 20 LTS |
 | Framework API | Express.js |
-| Truy cập dữ liệu | \mysql2\ (Promise API) |
-| Cơ sở dữ liệu | MySQL 8.0 (Port 3306) |
+| Truy cập dữ liệu | `pg` (PostgreSQL Client) |
+| Cơ sở dữ liệu | PostgreSQL (Port 5432) |
 | Giao diện | React (Vite) |
 | Kiểm thử | Jest / Vitest |
 | Tài liệu API | Swagger UI |
@@ -50,16 +50,16 @@ Luồng nghiệp vụ: **L02 - Tiếp nhận và phân loại yêu cầu bảo h
 ## 4. Cấu trúc thư mục
 
 ```text
+```text
 smartcrm-2374802010228-ticket-reception/
 ├── data/              # Dữ liệu mẫu, các file script SQL khởi tạo DB
 ├── docs/              # Tài liệu đặc tả, hình ảnh minh chứng Smoke Test
 ├── src/               # Mã nguồn chính của ứng dụng
-│   ├── config/        # Cấu hình kết nối CSDL, biến môi trường
-│   ├── controllers/   # Xử lý logic request/response cho API
-│   ├── models/        # Định nghĩa mô hình dữ liệu (MySQL queries)
-│   ├── routes/        # Định nghĩa danh sách các Endpoint REST API
-│   └── index.js       # File khởi tạo và chạy Server Express
+│   ├── backend/       # Mã nguồn xử lý Backend (Express.js)
+│   │   └── index.js   # File khởi tạo Server Express và kết nối PostgreSQL
+│   └── frontend/      # Mã nguồn giao diện ứng dụng (React)
 ├── tests/             # Kịch bản và mã nguồn kiểm thử (Unit test/Integration test)
+├── .env               # File cấu hình biến môi trường
 ├── .env.example       # File mẫu cấu hình biến môi trường
 ├── .gitignore          # Danh sách file/thư mục bỏ qua khi push Git
 ├── package.json       # Khai báo thông tin dự án và các thư viện npm
@@ -71,7 +71,7 @@ smartcrm-2374802010228-ticket-reception/
 
 ### Yêu cầu tiên quyết:
 - **Node.js**: v20 LTS trở lên
-- **MySQL Server**: v8.0 trở lên (chạy ở cổng 3306)
+- **PostgreSQL**: v14/v16 (chạy ở cổng 5432)
 
 ### Các bước khởi chạy:
 
@@ -94,17 +94,17 @@ smartcrm-2374802010228-ticket-reception/
    *Cấu hình mẫu trong file \.env\:*
    ```env
    DB_HOST=127.0.0.1
-   DB_PORT=3306
+   DB_PORT=5432
    DB_NAME=smartcrm
-   DB_USER=root
+   DB_USER=postgres
    DB_PASSWORD=
    PORT=3000
    ```
 
 4. **Tạo Cơ sở dữ liệu:**
-   Đảm bảo MySQL đang chạy và tạo database \smartcrm\:
-   ```sql
-   CREATE DATABASE IF NOT EXISTS smartcrm CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;
+   Đảm bảo dịch vụ PostgreSQL đang chạy và tạo database smartcrm qua pgAdmin 4 hoặc psql:
+   ```psql
+   CREATE DATABASE smartcrm;
    ```
 
 5. **Khởi chạy ứng dụng ở chế độ Phát triển (Development):**
@@ -122,5 +122,5 @@ smartcrm-2374802010228-ticket-reception/
 
 | Công cụ | Dùng vào việc gì | Cách tự kiểm chứng |
 |---|---|---|
-| **Gemini / ChatGPT** | Tối ưu hóa file cấu hình (.gitignore, .env.example), hỗ trợ viết script khởi tạo Node.js + Express và giải quyết lỗi kết nối CSDL MySQL. | Tự chạy thử lệnh npm run dev, thực hiện Smoke Test trên trình duyệt tại cổng 3000 và đối chiếu dữ liệu trả về từ MySQL (/db-check). |
-| **GitHub Copilot** | Gợi ý cú pháp mã nguồn Node.js, viết các hàm xử lý truy vấn MySQL (\mysql2/promise\) và tạo dữ liệu kiểm thử. | Chạy thử nghiệm kiểm thử đơn vị (Unit tests), đối chiếu kết quả trả về với yêu cầu đặc tả của đề bài. |
+| **Gemini / ChatGPT** | Tối ưu hóa file cấu hình (.gitignore, .env), xử lý đường dẫn tuyệt đối bằng path.resolve để đọc file .env chuẩn kĩ thuật và hỗ trợ cấu hình kết nối PostgreSQL (pg). | Tự chạy lệnh npm run dev, thực hiện Smoke Test thành công tại cổng 3000 và đối chiếu dữ liệu thời gian hệ thống trả về từ PostgreSQL (/db-check). |
+| **GitHub Copilot** | Gợi ý cú pháp mã nguồn Node.js, viết các hàm xử lý truy vấn PostgreSQL (pg) và tạo dữ liệu kiểm thử. | Chạy thử nghiệm kiểm thử đơn vị (Unit tests), đối chiếu kết quả trả về với yêu cầu đặc tả của đề bài. |
