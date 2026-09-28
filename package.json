@@ -9,7 +9,7 @@
   },
   "scripts": {
     "test": "echo \"Error: no test specified\" && exit 1",
-    "dev": "node src/index.js"
+    "dev": "node src/backend/index.js"
   },
   "repository": {
     "type": "git",
@@ -26,6 +26,6 @@
   "dependencies": {
     "dotenv": "^18.0.4",
     "express": "^5.2.1",
-    "mysql2": "^3.24.4"
+    "pg": "^8.23.0"
   }
 }
