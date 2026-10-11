@@ -1,0 +1,52 @@
+<mxfile host="app.diagrams.net">
+  <diagram id="-bLfhDM_hziZ7Wft_mT0" name="Page-4">
+    <mxGraphModel dx="1776" dy="969" grid="1" gridSize="10" guides="1" tooltips="1" connect="1" arrows="1" fold="1" page="1" pageScale="1" pageWidth="850" pageHeight="1100" math="0" shadow="0">
+      <root>
+        <mxCell id="0" />
+        <mxCell id="1" parent="0" />
+        <mxCell id="N6Tv5KBbEgq1Tm5253sG-3" parent="1" style="text;html=1;align=center;verticalAlign=middle;fontStyle=1;fontSize=14;" value="KIẾN TRÚC PHÂN LỚP – LUỒNG L2: TIẾP NHẬN VÀ PHÂN LOẠI YÊU CẦU BẢO HÀNH" vertex="1">
+          <mxGeometry height="30" width="990" x="440" y="620" as="geometry" />
+        </mxCell>
+        <mxCell id="N6Tv5KBbEgq1Tm5253sG-4" parent="1" style="rounded=0;whiteSpace=wrap;html=1;align=left;verticalAlign=top;spacingLeft=8;spacingTop=6;fontSize=11;fillColor=#dae8fc;strokeColor=#222222;strokeWidth=2;" value="&lt;b&gt;1. GIAO DIỆN WEB (trình duyệt) – lớp trình bày&lt;/b&gt;&lt;br&gt;Trách nhiệm: nhập liệu và hiển thị 3 màn hình (Danh sách, Tạo, Chi tiết Phiếu bảo hành);&lt;br&gt;hiển thị thông báo lỗi nghiệp vụ. Không chứa quy tắc nghiệp vụ; không truy cập CSDL." vertex="1">
+          <mxGeometry height="125" width="640" x="440" y="670" as="geometry" />
+        </mxCell>
+        <mxCell id="N6Tv5KBbEgq1Tm5253sG-5" parent="1" style="rounded=0;whiteSpace=wrap;html=1;align=left;verticalAlign=top;spacingLeft=8;spacingTop=6;fontSize=11;fillColor=#e2efda;strokeColor=#222222;strokeWidth=2;" value="&lt;b&gt;2. LỚP API (REST controller)&lt;/b&gt;&lt;br&gt;Trách nhiệm: nhận/trả JSON, kiểm trường bắt buộc và kiểu dữ liệu, xác thực phiên (hết hạn sau&lt;br&gt;30 phút, NFR2) và kiểm vai trò (Nhân viên tiếp nhận / Kỹ thuật viên / Quản lý trung tâm),&lt;br&gt;ánh xạ lỗi nghiệp vụ sang mã 400/401/403/404/409/422." vertex="1">
+          <mxGeometry height="135" width="640" x="440" y="855" as="geometry" />
+        </mxCell>
+        <mxCell id="N6Tv5KBbEgq1Tm5253sG-6" parent="1" style="rounded=0;whiteSpace=wrap;html=1;align=left;verticalAlign=top;spacingLeft=8;spacingTop=6;fontSize=11;fillColor=#fff2cc;strokeColor=#222222;strokeWidth=2;" value="&lt;b&gt;3. LỚP NGHIỆP VỤ (service)&lt;/b&gt;&lt;br&gt;Trách nhiệm: áp dụng QT01 (còn bảo hành), QT02 (chuẩn hóa số điện thoại, Hạn cam kết, Nhóm sự cố),&lt;br&gt;QT03 (vòng đời Trạng thái phiếu, mỗi Thiết bị một Phiếu chưa đóng, Ghi chú trao đổi không sửa);&lt;br&gt;đề xuất Nhóm sự cố và Mức ưu tiên (FR4); che số điện thoại và kiểm quyền theo Trung tâm bảo&lt;br&gt;hành (NFR2); ghi Phiếu bảo hành cùng lịch sử Trạng thái phiếu trong một giao dịch (NFR3)." vertex="1">
+          <mxGeometry height="165" width="640" x="440" y="1050" as="geometry" />
+        </mxCell>
+        <mxCell id="N6Tv5KBbEgq1Tm5253sG-7" parent="1" style="rounded=0;whiteSpace=wrap;html=1;align=left;verticalAlign=top;spacingLeft=8;spacingTop=6;fontSize=11;fillColor=#fce4d6;strokeColor=#222222;strokeWidth=2;" value="&lt;b&gt;4. LỚP TRUY CẬP DỮ LIỆU (repository)&lt;/b&gt;&lt;br&gt;Trách nhiệm: câu lệnh SQL/ORM (gồm INSERT ticket + ticket_status_log trong một giao dịch,&lt;br&gt;lọc và phân trang dùng index cho NFR1), mở và đóng giao dịch;&lt;br&gt;không chứa quy tắc nghiệp vụ." vertex="1">
+          <mxGeometry height="135" width="640" x="440" y="1275" as="geometry" />
+        </mxCell>
+        <mxCell id="N6Tv5KBbEgq1Tm5253sG-8" parent="1" style="rounded=0;whiteSpace=wrap;html=1;align=left;verticalAlign=top;spacingLeft=8;spacingTop=6;fontSize=11;fillColor=#ececec;strokeColor=#222222;strokeWidth=2;" value="&lt;b&gt;5. CƠ SỞ DỮ LIỆU PostgreSQL&lt;/b&gt;&lt;br&gt;Trách nhiệm: lưu trữ, ràng buộc toàn vẹn (PK, FK, UNIQUE, CHECK) và index.&lt;br&gt;6 bảng: customer, device, ticket, ticket_status_log, ticket_note, issue_category." vertex="1">
+          <mxGeometry height="110" width="640" x="440" y="1470" as="geometry" />
+        </mxCell>
+        <mxCell id="N6Tv5KBbEgq1Tm5253sG-9" parent="1" style="rounded=0;whiteSpace=wrap;html=1;align=left;verticalAlign=top;spacingLeft=8;spacingTop=6;fontSize=11;fillColor=#f7f7f7;strokeColor=#222222;strokeWidth=2;dashed=1;" value="&lt;b&gt;NGOÀI PHẠM VI (không thiết kế)&lt;/b&gt;&lt;br&gt;• Phân công Kỹ thuật viên, lịch hẹn (L4)&lt;br&gt;• Kho linh kiện, tồn kho (L5)&lt;br&gt;• Khảo sát hài lòng CSAT/NPS (L8)&lt;br&gt;• Mô hình học máy phân loại (L10)&lt;br&gt;• Hợp nhất hồ sơ Khách hàng trùng (L1)&lt;br&gt;• Gửi tin nhắn Khách hàng, thanh toán&lt;br&gt;• Hạ tầng: cache, hàng đợi, microservices,&lt;br&gt;&amp;nbsp;&amp;nbsp;sao lưu và khôi phục (việc vận hành)" vertex="1">
+          <mxGeometry height="155" width="290" x="1140" y="835" as="geometry" />
+        </mxCell>
+        <mxCell id="N6Tv5KBbEgq1Tm5253sG-10" parent="1" style="rounded=0;whiteSpace=wrap;html=1;align=left;verticalAlign=top;spacingLeft=8;spacingTop=6;fontSize=11;fillColor=#fff2cc;strokeColor=#222222;strokeWidth=2;" value="&lt;b&gt;TÍCH HỢP VỚI CÁC LUỒNG KHÁC&lt;/b&gt;&lt;br&gt;L4, L5, L8 dùng Phiếu bảo hành của L2&lt;br&gt;qua TicketService (gọi hàm):&lt;br&gt;• L4 ghi technician_id khi phân công&lt;br&gt;• L5 đổi Trạng thái phiếu: CHỜ LINH&lt;br&gt;&amp;nbsp;&amp;nbsp;KIỆN, HOÀN TẤT (QT03)&lt;br&gt;• L8 chỉ khảo sát phiếu ĐÃ ĐÓNG&lt;br&gt;Không ghi thẳng vào bảng ticket." vertex="1">
+          <mxGeometry height="150" width="290" x="1140" y="1050" as="geometry" />
+        </mxCell>
+        <mxCell id="N6Tv5KBbEgq1Tm5253sG-11" parent="1" style="rounded=0;whiteSpace=wrap;html=1;align=left;verticalAlign=top;spacingLeft=8;spacingTop=6;fontSize=11;fillColor=#f9f9f9;strokeColor=#222222;strokeWidth=2;" value="&lt;b&gt;CHÚ THÍCH&lt;/b&gt;&lt;br&gt;Khung liền = trong phạm vi&lt;br&gt;Khung nét đứt = ngoài phạm vi&lt;br&gt;──▶ Lời gọi, từ bên gọi sang bên&lt;br&gt;&amp;nbsp;&amp;nbsp;&amp;nbsp;&amp;nbsp; được gọi; nhãn ghi cách trao đổi&lt;br&gt;Mỗi lớp một màu&lt;br&gt;Lớp trên chỉ gọi lớp ngay dưới,&lt;br&gt;không gọi ngược lên.&lt;br&gt;NFR1 hiệu năng · NFR2 bảo mật ·&lt;br&gt;NFR3 lưu trữ và tin cậy (Mục 1)" vertex="1">
+          <mxGeometry height="155" width="290" x="1140" y="1275" as="geometry" />
+        </mxCell>
+        <mxCell id="N6Tv5KBbEgq1Tm5253sG-12" edge="1" parent="1" source="N6Tv5KBbEgq1Tm5253sG-4" style="endArrow=block;endFill=1;html=1;strokeWidth=2;align=left;labelPosition=right;verticalLabelPosition=middle;" target="N6Tv5KBbEgq1Tm5253sG-5" value="HTTPS + JSON (REST)">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="N6Tv5KBbEgq1Tm5253sG-13" edge="1" parent="1" source="N6Tv5KBbEgq1Tm5253sG-5" style="endArrow=block;endFill=1;html=1;strokeWidth=2;align=left;labelPosition=right;verticalLabelPosition=middle;" target="N6Tv5KBbEgq1Tm5253sG-6" value="gọi hàm, truyền DTO">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="N6Tv5KBbEgq1Tm5253sG-14" edge="1" parent="1" source="N6Tv5KBbEgq1Tm5253sG-6" style="endArrow=block;endFill=1;html=1;strokeWidth=2;align=left;labelPosition=right;verticalLabelPosition=middle;" target="N6Tv5KBbEgq1Tm5253sG-7" value="gọi hàm, truyền entity">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="N6Tv5KBbEgq1Tm5253sG-15" edge="1" parent="1" source="N6Tv5KBbEgq1Tm5253sG-7" style="endArrow=block;endFill=1;html=1;strokeWidth=2;align=left;labelPosition=right;verticalLabelPosition=middle;" target="N6Tv5KBbEgq1Tm5253sG-8" value="SQL qua TCP 5432, giao dịch">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="N6Tv5KBbEgq1Tm5253sG-16" edge="1" parent="1" source="N6Tv5KBbEgq1Tm5253sG-10" style="endArrow=block;endFill=1;html=1;strokeWidth=2;" target="N6Tv5KBbEgq1Tm5253sG-6" value="gọi hàm">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+      </root>
+    </mxGraphModel>
+  </diagram>
+</mxfile>
