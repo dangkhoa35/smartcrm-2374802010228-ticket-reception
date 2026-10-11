@@ -1,0 +1,88 @@
+<mxfile host="app.diagrams.net">
+  <diagram id="smart-crm-l5-wireframes" name="usecase">
+    <mxGraphModel dx="1776" dy="969" grid="1" gridSize="10" guides="1" tooltips="1" connect="1" arrows="1" fold="1" page="1" pageScale="1" pageWidth="1100" pageHeight="1450" math="0" shadow="0">
+      <root>
+        <mxCell id="0" />
+        <mxCell id="1" parent="0" />
+        <mxCell id="0sXu24urV1fbT4qkE0em-1" parent="1" style="rounded=0;whiteSpace=wrap;html=1;fillColor=none;verticalAlign=top;align=left;spacingLeft=10;fontStyle=1;strokeWidth=2;fontSize=15;" value="Hệ thống: Tiếp nhận và phân loại yêu cầu bảo hành (luồng L2)" vertex="1">
+          <mxGeometry height="910" width="680" x="665" y="500" as="geometry" />
+        </mxCell>
+        <mxCell id="0sXu24urV1fbT4qkE0em-2" parent="1" style="ellipse;whiteSpace=wrap;html=1;fillColor=#d5e8d4;strokeColor=#82b366;fontSize=15;" value="UC1: Tra cứu Khách hàng theo số điện thoại" vertex="1">
+          <mxGeometry height="76" width="250" x="750" y="540" as="geometry" />
+        </mxCell>
+        <mxCell id="0sXu24urV1fbT4qkE0em-3" parent="1" style="ellipse;whiteSpace=wrap;html=1;fillColor=#d5e8d4;strokeColor=#82b366;fontSize=15;" value="UC3: Tạo Khách hàng mới khi chưa tồn tại" vertex="1">
+          <mxGeometry height="76" width="250" x="740" y="687" as="geometry" />
+        </mxCell>
+        <mxCell id="0sXu24urV1fbT4qkE0em-4" parent="1" style="ellipse;whiteSpace=wrap;html=1;fillColor=#f5f5f5;strokeColor=#666666;dashed=1;fontSize=15;" value="UC8: Ghi nhận trao đổi với Khách hàng trên Phiếu bảo hành" vertex="1">
+          <mxGeometry height="76" width="250" x="740" y="820" as="geometry" />
+        </mxCell>
+        <mxCell id="0sXu24urV1fbT4qkE0em-5" parent="1" style="ellipse;whiteSpace=wrap;html=1;fillColor=#d5e8d4;strokeColor=#82b366;fontSize=15;" value="UC2: Tạo Phiếu bảo hành mới" vertex="1">
+          <mxGeometry height="76" width="250" x="1060" y="620" as="geometry" />
+        </mxCell>
+        <mxCell id="0sXu24urV1fbT4qkE0em-6" parent="1" style="ellipse;whiteSpace=wrap;html=1;fillColor=#fff2cc;strokeColor=#d6b656;fontSize=15;" value="UC4: Phân loại Nhóm sự cố và Mức ưu tiên" vertex="1">
+          <mxGeometry height="88" width="250" x="1020" y="750" as="geometry" />
+        </mxCell>
+        <mxCell id="0sXu24urV1fbT4qkE0em-7" parent="1" style="ellipse;whiteSpace=wrap;html=1;fillColor=#fff2cc;strokeColor=#d6b656;fontSize=15;" value="UC5: Xem danh sách Phiếu bảo hành theo Hạn cam kết" vertex="1">
+          <mxGeometry height="76" width="250" x="760" y="920" as="geometry" />
+        </mxCell>
+        <mxCell id="0sXu24urV1fbT4qkE0em-8" parent="1" style="ellipse;whiteSpace=wrap;html=1;fillColor=#f5f5f5;strokeColor=#666666;dashed=1;fontSize=15;" value="UC6: Cập nhật Trạng thái phiếu" vertex="1">
+          <mxGeometry height="76" width="250" x="1040" y="880" as="geometry" />
+        </mxCell>
+        <mxCell id="0sXu24urV1fbT4qkE0em-9" parent="1" style="ellipse;whiteSpace=wrap;html=1;fillColor=#fff2cc;strokeColor=#d6b656;fontSize=15;" value="UC7: Xem lịch sử Phiếu bảo hành của Thiết bị" vertex="1">
+          <mxGeometry height="76" width="250" x="1040" y="1000" as="geometry" />
+        </mxCell>
+        <mxCell id="0sXu24urV1fbT4qkE0em-10" parent="1" style="shape=umlActor;verticalLabelPosition=bottom;verticalAlign=top;html=1;outlineConnect=0;fontSize=15;" value="Nhân viên tiếp nhận" vertex="1">
+          <mxGeometry height="60" width="30" x="530" y="605" as="geometry" />
+        </mxCell>
+        <mxCell id="0sXu24urV1fbT4qkE0em-11" parent="1" style="shape=umlActor;verticalLabelPosition=bottom;verticalAlign=top;html=1;outlineConnect=0;fontSize=15;" value="Quản lý trung tâm" vertex="1">
+          <mxGeometry height="60" width="30" x="550" y="920" as="geometry" />
+        </mxCell>
+        <mxCell id="0sXu24urV1fbT4qkE0em-12" parent="1" style="shape=umlActor;verticalLabelPosition=bottom;verticalAlign=top;html=1;outlineConnect=0;fontSize=15;" value="Kỹ thuật viên" vertex="1">
+          <mxGeometry height="60" width="30" x="1410" y="888" as="geometry" />
+        </mxCell>
+        <mxCell id="0sXu24urV1fbT4qkE0em-13" parent="1" style="shape=umlActor;verticalLabelPosition=bottom;verticalAlign=top;html=1;outlineConnect=0;fontSize=15;" value="&lt;i&gt;«system»&lt;/i&gt;&lt;br&gt;Hệ thống tự động" vertex="1">
+          <mxGeometry height="60" width="30" x="1410" y="680" as="geometry" />
+        </mxCell>
+        <mxCell id="0sXu24urV1fbT4qkE0em-14" edge="1" parent="1" source="0sXu24urV1fbT4qkE0em-10" style="endArrow=none;html=1;rounded=0;fontSize=15;" target="0sXu24urV1fbT4qkE0em-2">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="0sXu24urV1fbT4qkE0em-15" edge="1" parent="1" source="0sXu24urV1fbT4qkE0em-10" style="endArrow=none;html=1;rounded=0;fontSize=15;" target="0sXu24urV1fbT4qkE0em-5">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="0sXu24urV1fbT4qkE0em-16" edge="1" parent="1" source="0sXu24urV1fbT4qkE0em-10" style="endArrow=none;html=1;rounded=0;fontSize=15;" target="0sXu24urV1fbT4qkE0em-3">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="0sXu24urV1fbT4qkE0em-17" edge="1" parent="1" source="0sXu24urV1fbT4qkE0em-10" style="endArrow=none;html=1;rounded=0;fontSize=15;" target="0sXu24urV1fbT4qkE0em-4">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="0sXu24urV1fbT4qkE0em-18" edge="1" parent="1" source="0sXu24urV1fbT4qkE0em-11" style="endArrow=none;html=1;rounded=0;fontSize=15;" target="0sXu24urV1fbT4qkE0em-7">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="0sXu24urV1fbT4qkE0em-19" edge="1" parent="1" source="0sXu24urV1fbT4qkE0em-12" style="endArrow=none;html=1;rounded=0;fontSize=15;" target="0sXu24urV1fbT4qkE0em-8">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="0sXu24urV1fbT4qkE0em-20" edge="1" parent="1" source="0sXu24urV1fbT4qkE0em-12" style="endArrow=none;html=1;rounded=0;fontSize=15;" target="0sXu24urV1fbT4qkE0em-9">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="0sXu24urV1fbT4qkE0em-21" edge="1" parent="1" source="0sXu24urV1fbT4qkE0em-13" style="endArrow=none;html=1;rounded=0;fontSize=15;" target="0sXu24urV1fbT4qkE0em-5">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="0sXu24urV1fbT4qkE0em-22" edge="1" parent="1" source="0sXu24urV1fbT4qkE0em-13" style="endArrow=none;html=1;rounded=0;fontSize=15;" target="0sXu24urV1fbT4qkE0em-6">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="0sXu24urV1fbT4qkE0em-23" edge="1" parent="1" source="0sXu24urV1fbT4qkE0em-5" style="endArrow=open;endFill=0;dashed=1;html=1;rounded=0;fontSize=15;" target="0sXu24urV1fbT4qkE0em-2" value="«include»">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="0sXu24urV1fbT4qkE0em-24" edge="1" parent="1" source="0sXu24urV1fbT4qkE0em-5" style="endArrow=open;endFill=0;dashed=1;html=1;rounded=0;fontSize=15;" target="0sXu24urV1fbT4qkE0em-6" value="«include»">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="0sXu24urV1fbT4qkE0em-25" edge="1" parent="1" source="0sXu24urV1fbT4qkE0em-3" style="endArrow=open;endFill=0;dashed=1;html=1;rounded=0;fontSize=15;" target="0sXu24urV1fbT4qkE0em-5" value="«extend»">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="0sXu24urV1fbT4qkE0em-26" parent="1" style="rounded=0;whiteSpace=wrap;html=1;align=left;verticalAlign=top;spacing=8;fillColor=#ffffff;strokeColor=#999999;fontSize=15;" value="&lt;b&gt;CHÚ THÍCH KÝ HIỆU&lt;/b&gt;&lt;br&gt;&lt;br&gt;• Hình người: actor, nằm ngoài ranh giới hệ thống. Hệ thống tự động là actor phụ, không phải người.&lt;br&gt;• Hình elip: use case (động từ + đối tượng).&lt;br&gt;• Khung chữ nhật: ranh giới hệ thống.&lt;br&gt;• Đường liền: actor tham gia use case.&lt;br&gt;• «include»: use case gốc luôn gọi use case đích (mũi tên trỏ tới use case được gọi).&lt;br&gt;• «extend»: nhánh chỉ xảy ra khi có điều kiện; mũi tên trỏ từ use case mở rộng tới use case gốc.&lt;br&gt;&lt;br&gt;&lt;b&gt;Màu = MoSCoW&lt;/b&gt;&lt;br&gt;Xanh lá: MUST · Vàng: SHOULD · Xám nét đứt: COULD" vertex="1">
+          <mxGeometry height="290" width="355" x="687.5" y="1090" as="geometry" />
+        </mxCell>
+      </root>
+    </mxGraphModel>
+  </diagram>
+</mxfile>
