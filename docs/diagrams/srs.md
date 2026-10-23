@@ -38,7 +38,6 @@ Sinh viên: Hà Đăng Khoa · MSSV: 2374802010228 · Track: SE
 | Nhóm sự cố          | Phân loại nguyên nhân: màn hình, pin, sạc, phần mềm, nước vào, khác                                                          | issue_category                |
 | Mức ưu tiên         | Mức khẩn của phiếu bảo hành: CAO, TRUNG BÌNH, THẤP; quyết định hạn cam kết                                                   | priority                      |
 | Mô tả lỗi           | Nội dung lỗi do khách hàng kể, ghi bằng văn bản                                                                              | issue_desc                    |
-| Ghi chú trao đổi    | Một nội dung trao đổi giữa nhân viên tiếp nhận và khách hàng, gắn với một Phiếu bảo hành, kèm thời điểm và người ghi         | ticket_note                   |
 | Nhân viên tiếp nhận | Nhân viên trung tâm bảo hành tiếp nhận yêu cầu và ghi phiếu bảo hành                                                         | \-                            |
 | Kỹ thuật viên       | Nhân viên thực hiện sửa chữa                                                                                                 | technician                    |
 | Quản lý trung tâm   | Người quản lý trung tâm bảo hành, theo dõi hạn cam kết và phê duyệt ngoại lệ                                                 | \-                            |
@@ -65,7 +64,6 @@ Sinh viên: Hà Đăng Khoa · MSSV: 2374802010228 · Track: SE
 | FR5 | Hệ thống hiển thị danh sách Phiếu bảo hành có lọc theo Trạng thái phiếu, sắp theo Hạn cam kết tăng dần và có phân trang.                                                                     |
 | FR6 | Hệ thống cho phép chuyển Trạng thái phiếu theo đúng vòng đời và ghi mỗi lần chuyển kèm thời điểm và người thực hiện.                                                                         |
 | FR7 | Hệ thống hiển thị danh sách các Phiếu bảo hành trước đó của một Thiết bị kèm Nhóm sự cố, và gắn cảnh báo "lỗi lặp lại" khi Thiết bị có từ ba Phiếu bảo hành cùng Nhóm sự cố.                 |
-| FR8 | Hệ thống lưu mỗi nội dung trao đổi với Khách hàng thành một Ghi chú trao đổi gắn với Phiếu bảo hành, kèm thời điểm và người ghi; Ghi chú trao đổi đã lưu không được sửa hoặc xóa.            |
 
 **User Story**
 
@@ -78,9 +76,8 @@ Sinh viên: Hà Đăng Khoa · MSSV: 2374802010228 · Track: SE
 | US5 | Là Quản lý trung tâm, tôi muốn xem danh sách Phiếu bảo hành theo Hạn cam kết, để biết phiếu nào sắp quá hạn và xử lý trước.                                                                          | SHOULD |
 | US6 | Là Kỹ thuật viên, tôi muốn cập nhật Trạng thái phiếu, để mọi người biết Phiếu bảo hành đang ở bước nào.                                                                                              | COULD  |
 | US7 | Là Kỹ thuật viên, tôi muốn xem các Phiếu bảo hành trước đó của một Thiết bị kèm Nhóm sự cố, để nhận ra lỗi lặp lại lần thứ ba và báo lên thay vì sửa tiếp.                                           | SHOULD |
-| US8 | Là Nhân viên tiếp nhận, tôi muốn ghi lại nội dung trao đổi với Khách hàng theo từng Phiếu bảo hành, kèm thời điểm và người ghi, để không phải hỏi lại Khách hàng và có căn cứ khi xảy ra tranh chấp. | COULD  |
 
-*Phân bố MoSCoW: 3 MUST (US1–US3) · 3 SHOULD (US4, US5, US7) · 2 COULD (US6, US8).*
+*Phân bố MoSCoW: 3 MUST (US1–US3) · 3 SHOULD (US4, US5, US7) · 1 COULD (US6).*
 
 # 4. Yêu cầu phi chức năng
 
@@ -109,7 +106,6 @@ Sinh viên: Hà Đăng Khoa · MSSV: 2374802010228 · Track: SE
 | FR5   | Xem danh sách Phiếu bảo hành theo Hạn cam kết                 | US5        | UC5 – Xem danh sách Phiếu bảo hành theo Hạn cam kết        | SHOULD | GET /api/tickets                                          |
 | FR6   | Chuyển Trạng thái phiếu và ghi lịch sử                        | US6        | UC6 – Cập nhật Trạng thái phiếu                            | COULD  | PATCH /api/tickets/{id}/status                            |
 | FR7   | Xem lịch sử Phiếu bảo hành của Thiết bị, cảnh báo lỗi lặp lại | US7        | UC7 – Xem lịch sử Phiếu bảo hành của Thiết bị              | SHOULD | GET /api/tickets?device_id=                               |
-| FR8   | Lưu Ghi chú trao đổi trên Phiếu bảo hành                      | US8        | UC8 – Ghi nhận trao đổi với Khách hàng trên Phiếu bảo hành | COULD  | POST /api/tickets/{id}/notes; GET /api/tickets/{id}/notes |
 
 # Mục 2: User Story: tự kiểm INVEST và tiêu chí chấp nhận
 
@@ -124,7 +120,6 @@ Sinh viên: Hà Đăng Khoa · MSSV: 2374802010228 · Track: SE
 | US5   | V2 (chị Trâm: cần màn hình thấy phiếu sắp quá hạn)                                   | Đạt 6/6. Chỉ đọc.                                                                         |
 | US6   | V2 (không biết phiếu ở bước nào)                                                     | Đạt 6/6. Không gán Kỹ thuật viên (thuộc L4).                                              |
 | US7   | Phát biểu của anh Dũng: sửa lần ba cùng lỗi thường là lỗi lô hàng                    | Đạt 6/6. Chỉ đọc; ngưỡng "từ ba Phiếu" kiểm chứng được.                                   |
-| US8   | Phát biểu của chị Lan: yêu cầu thật đằng sau ô ghi chú tự do là lưu lịch sử trao đổi | Đạt 6/6. Nêu mục tiêu (lịch sử có thời điểm, người ghi), không nêu giải pháp "ô ghi chú". |
 
 ## 2. Tiêu chí chấp nhận cho story MUST (Given – When – Then)
 
@@ -162,8 +157,6 @@ Sinh viên: Hà Đăng Khoa · MSSV: 2374802010228 · Track: SE
 
 - **US7:** GIVEN một Thiết bị đã có hai Phiếu bảo hành cùng Nhóm sự cố PIN, WHEN Kỹ thuật viên xem lịch sử của Thiết bị khi có Phiếu thứ ba cùng Nhóm sự cố PIN, THEN hệ thống hiển thị cảnh báo "lỗi lặp lại".
 
-- **US8:** GIVEN Nhân viên tiếp nhận đã lưu một Ghi chú trao đổi, WHEN mở lại Phiếu bảo hành, THEN hệ thống hiển thị ghi chú kèm thời điểm và tên người ghi, và không có chức năng sửa hoặc xóa ghi chú đó.
-
 # Mục 3: Use Case
 
 ## 1. Use Case Diagram
@@ -183,7 +176,6 @@ Sinh viên: Hà Đăng Khoa · MSSV: 2374802010228 · Track: SE
 | UC5 | Xem danh sách Phiếu bảo hành theo Hạn cam kết        | Quản lý trung tâm                           | US5 | FR5 | SHOULD |
 | UC6 | Cập nhật Trạng thái phiếu                            | Kỹ thuật viên                               | US6 | FR6 | COULD  |
 | UC7 | Xem lịch sử Phiếu bảo hành của Thiết bị              | Kỹ thuật viên                               | US7 | FR7 | SHOULD |
-| UC8 | Ghi nhận trao đổi với Khách hàng trên Phiếu bảo hành | Nhân viên tiếp nhận                         | US8 | FR8 | COULD  |
 
 Quan hệ: UC2 «include» UC1 (luôn tra cứu Khách hàng); UC2 «include» UC4 (luôn đề xuất phân loại); UC3 «extend» UC2 (chỉ xảy ra khi Khách hàng chưa tồn tại).
 
@@ -236,8 +228,6 @@ Quan hệ: UC2 «include» UC1 (luôn tra cứu Khách hàng); UC2 «include» U
 | 4   | POST        | /api/tickets                                                      | Tạo Phiếu bảo hành mới                                                            | US2, US4   | MUST   |
 | 5   | GET         | /api/tickets?status=&assignee_id=&overdue=&device_id=&page=&size= | Lấy danh sách Phiếu bảo hành, có lọc và phân trang; lọc theo Thiết bị cho lịch sử | US5, US7   | SHOULD |
 | 6   | PATCH       | /api/tickets/{id}/status                                          | Chuyển Trạng thái phiếu                                                           | US6        | COULD  |
-| 7   | POST        | /api/tickets/{id}/notes                                           | Ghi một Ghi chú trao đổi vào Phiếu bảo hành                                       | US8        | COULD  |
-| 8   | GET         | /api/tickets/{id}/notes                                           | Xem các Ghi chú trao đổi của Phiếu bảo hành                                       | US8        | COULD  |
 
 ## 2. Quy ước chung
 
