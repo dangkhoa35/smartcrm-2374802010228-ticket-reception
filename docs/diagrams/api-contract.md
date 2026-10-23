@@ -1,220 +1,88 @@
 # API CONTRACT – SMART CRM MEKONG MOBILE
 
 **Luồng nghiệp vụ:** L2 – Tiếp nhận và phân loại yêu cầu bảo hành  
-**Phạm vi:** US1–US7; không đặc tả US8 (Ghi chú trao đổi) trong phiên bản này.  
-**Lưu ý:** Đây là hợp đồng API đề xuất dựa trên SRS/BT1 của luồng L2. Tên trường và mã lỗi cần được đối chiếu lần cuối với DDL, giao diện và mã nguồn khi triển khai.
+**Phiên bản:** 1.1 (20/10/2026) – đồng bộ với mã nguồn Sprint 1; thay cho bản v1.0 của BT1 (xem mục 1.11 và README mục 6, QĐ-4)  
+**Phạm vi:** US1–US7; không đặc tả US8 (Ghi chú trao đổi) theo TD-01.  
+**Cột "Hiện thực":** `Đã làm` = đã hiện thực trong Sprint 1; `Chưa làm` = đã thiết kế, chưa hiện thực.
 
 ## 1.1. Quy ước chung
 
 | Mục | Quy ước |
 |---|---|
-| **Base URL** | `/api`; dữ liệu JSON UTF-8; yêu cầu có body dùng `Content-Type: application/json`. |
-| **Xác thực** | Header `Authorization: Bearer <access_token>`. Token hợp lệ phải gắn với người dùng đã đăng nhập và vai trò/trung tâm của người đó. Thiếu, sai hoặc hết hạn token trả `401 UNAUTHENTICATED`. |
-| **Vai trò** | `RECEPTIONIST` (Nhân viên tiếp nhận), `CENTER_MANAGER` (Quản lý trung tâm), `TECHNICIAN` (Kỹ thuật viên). Mỗi endpoint kiểm tra vai trò và phạm vi trung tâm trước khi trả dữ liệu. |
-| **Phạm vi trung tâm** | Người dùng chỉ được xem hoặc thao tác dữ liệu thuộc trung tâm được phép. Truy cập trái quyền trả `403 FORBIDDEN`, không tiết lộ dữ liệu của trung tâm khác. Quyền xem danh sách phiếu áp dụng theo SRS và phân quyền đã cấu hình. |
-| **Tên trường** | Dùng `snake_case`, nhất quán với các tên trường trong SRS/CSDL: `customer_id`, `device_id`, `center_id`, `ticket_code`, `issue_desc`, `category_id`, `priority`, `due_date`. |
-| **Thời gian** | ISO 8601 kèm múi giờ, ví dụ `2026-10-19T14:30:00+07:00`. Ngày mua dùng `YYYY-MM-DD`. |
-| **Mã phiếu** | Máy chủ tự sinh mã duy nhất theo dạng `BH-XXXXXX/YYYY`, ví dụ `BH-000231/2026`; client không tự cấp mã. |
-| **Trạng thái** | API dùng mã trạng thái không dấu: `MOI`, `DA_TIEP_NHAN`, `DANG_XU_LY`, `CHO_LINH_KIEN`, `HOAN_TAT`, `DA_DONG`, `DA_HUY` nếu các trạng thái này được cấu hình trong mô hình dữ liệu. Việc chuyển trạng thái phải theo vòng đời đã định nghĩa; không cho quay lại trạng thái trước. Nếu DDL/UC sử dụng bộ trạng thái khác, cần thống nhất trước khi triển khai. |
-| **Nhóm sự cố** | Một trong `MAN_HINH`, `PIN`, `SAC`, `PHAN_MEM`, `NUOC_VAO`, `KHAC`; `category_id` có thể `null` nếu chưa phân loại được. |
-| **Mức ưu tiên** | `CAO`, `TRUNG_BINH`, `THAP`. Nếu không nhận diện được mức ưu tiên, mặc định `TRUNG_BINH`. |
-| **Hạn cam kết** | Sinh tự động theo QT02: `CAO` = 24 giờ, `TRUNG_BINH` = 72 giờ, `THAP` = 120 giờ; chỉ tính ngày làm việc từ thứ Hai đến thứ Bảy. Máy chủ tính `due_date`, không nhận hạn cam kết do client tự khai. |
-| **Phân trang** | `page` bắt đầu từ 1, mặc định 1; `size` mặc định 20, tối đa 100. Phản hồi danh sách có `page`, `size`, `total`. |
-| **Che số điện thoại** | Theo NFR2, phản hồi gửi tới vai trò không phải `CENTER_MANAGER` phải che số điện thoại, ví dụ `090****567`. Không ghi số điện thoại đầy đủ vào log ứng dụng. |
-| **Chống gửi trùng** | `POST /api/tickets` nhận header `Idempotency-Key`. Nếu client thử lại cùng khóa do mất kết nối, máy chủ trả lại kết quả của yêu cầu đã xử lý thay vì tạo phiếu thứ hai. |
-| **Định dạng lỗi** | Mọi lỗi trả JSON dạng `{"error":{"code":"...","message":"...","fields":{}}}`. `fields` chứa lỗi theo trường hoặc thông tin liên quan khi phù hợp. |
-| **Thứ tự kiểm tra** | (1) xác thực phiên; (2) quyền/vai trò và phạm vi trung tâm; (3) validation đầu vào; (4) kiểm tra bản ghi tồn tại và quan hệ; (5) kiểm tra quy tắc nghiệp vụ; (6) ghi dữ liệu trong giao dịch. Khi lỗi, không để lại dữ liệu ghi dở. |
+| **Base URL** | `/api`; dữ liệu JSON UTF-8; yêu cầu có body dùng `Content-Type: application/json`. Đường dẫn kiểm tra sống: `GET /health` trả `{"status":"ok"}`. |
+| **Xác thực** | **Thiết kế đích:** `Authorization: Bearer <access_token>`, phiên hết hạn sau 30 phút (NFR2). **Sprint 1 (tạm thời):** chưa có đăng nhập; người thao tác được lấy từ 3 header: `x-role` (mặc định `NHAN_VIEN_TIEP_NHAN`), `x-employee-id` (mặc định `1`), `x-center-id` (mặc định `1`). Giá trị `x-role` không hợp lệ trả `401 CHUA_XAC_THUC`. Cơ chế Bearer sẽ thay thế ở BT2. |
+| **Vai trò** | `NHAN_VIEN_TIEP_NHAN` (Nhân viên tiếp nhận), `QUAN_LY_TRUNG_TAM` (Quản lý trung tâm), `KY_THUAT_VIEN` (Kỹ thuật viên). Mỗi endpoint kiểm tra vai trò trước khi xử lý; sai vai trò trả `403 KHONG_DU_QUYEN`. |
+| **Phạm vi trung tâm** | Trung tâm của người thao tác (`center_id`) lấy từ phiên/header, **không nhận từ body**. Danh sách và chi tiết phiếu chỉ trả phiếu của trung tâm đó; phiếu của trung tâm khác trả `404 KHONG_TIM_THAY` để không tiết lộ dữ liệu. |
+| **Tên trường** | `snake_case`, thống nhất với DDL: `customer_id`, `device_id`, `center_id`, `ticket_code`, `issue_desc`, `category_id`, `priority`, `due_date`. |
+| **Thời gian** | ISO 8601 theo UTC (hậu tố `Z`) ở Sprint 1, ví dụ `2026-10-20T10:37:19.199Z`. Ngày mua dùng `YYYY-MM-DD`. |
+| **Mã phiếu** | Máy chủ tự sinh, duy nhất, dạng `BH-XXXXXX/YYYY` (số lấy từ sequence `ticket_code_seq`, năm theo ngày tiếp nhận), ví dụ `BH-007801/2026`; client không tự cấp mã. |
+| **Trạng thái** | `MOI`, `DA_PHAN_CONG`, `DANG_XU_LY`, `CHO_LINH_KIEN`, `HOAN_TAT`, `DA_DONG`, `DA_HUY` (đúng ràng buộc CHECK trong DDL). Phiếu mới luôn ở `MOI`. Chuyển trạng thái chỉ theo bảng ở EP6, không quay lại trạng thái trước (QT03). |
+| **Nhóm sự cố** | Lấy từ bảng `issue_category`: `MAN_HINH`, `PIN`, `SAC`, `PHAN_MEM`, `NUOC_VAO`, `KHAC`. `category_id` có thể `null` nếu chưa phân loại. |
+| **Mức ưu tiên** | `CAO`, `TRUNG_BINH`, `THAP`. Nếu client không gửi: lấy `default_priority` của nhóm sự cố; không có nhóm sự cố thì `TRUNG_BINH`. |
+| **Hạn cam kết** | Máy chủ tính theo QT02, client không được tự khai: `CAO` = 1 ngày, `TRUNG_BINH` = 3 ngày, `THAP` = 5 ngày (tương ứng 24/72/120 giờ), tính từ giờ tiếp nhận, **bỏ qua Chủ nhật** (chỉ tính thứ Hai đến thứ Bảy). |
+| **Phân trang** | `page` ≥ 1, mặc định 1; `size` từ 1 đến 100, mặc định 20. Phản hồi danh sách có `paging` gồm `page`, `size`, `total`, `total_pages`. |
+| **Che số điện thoại** | Theo NFR2, phản hồi gửi tới vai trò không phải `QUAN_LY_TRUNG_TAM` che số điện thoại, ví dụ `078****918`. |
+| **Chống gửi trùng** | `POST /api/tickets` nhận header `Idempotency-Key`. Gửi lại cùng khóa thì máy chủ trả lại phiếu đã tạo với `200 OK` thay vì tạo phiếu thứ hai. |
+| **Định dạng thành công** | Một đối tượng: `{"data": { ... }}`. Danh sách: `{"data": [ ... ], "paging": { ... }}`. |
+| **Định dạng lỗi** | `{"error":"MA_LOI","message":"...","details":[{"field":"...","message":"..."}]}`. `details` chỉ có khi lỗi kiểm tra dữ liệu (`400`). |
+| **Thứ tự kiểm tra** | (1) vai trò hợp lệ → 401; (2) vai trò được phép → 403; (3) kiểm tra dữ liệu đầu vào → 400; (3b) nếu `Idempotency-Key` đã dùng thì trả lại phiếu cũ với 200 và dừng; (4) thiết bị tồn tại và thuộc khách hàng → 422; (5) thiết bị chưa có phiếu mở → 409; (6) bảo hành/phê duyệt → 422; (7) nhóm sự cố tồn tại → 422; (8) ghi `ticket` và `ticket_status_log` trong một giao dịch. Khi lỗi, không để lại dữ liệu ghi dở. |
 
-## 1.2. Danh sách endpoint
+## 1.2. Danh mục mã lỗi
 
-| Mã | Phương thức | Đường dẫn | Mục đích | Actor chính | User Story / MoSCoW |
-|---|---|---|---|---|---|
-| EP1 | `GET` | `/api/customers?phone={phone}` | Tra cứu khách hàng theo số điện thoại đã chuẩn hóa | Nhân viên tiếp nhận | US1 – MUST |
-| EP2 | `POST` | `/api/customers` | Tạo khách hàng mới nếu số điện thoại chưa tồn tại | Nhân viên tiếp nhận | US3 – MUST |
-| EP3 | `GET` | `/api/customers/{customer_id}/devices` | Lấy danh sách thiết bị của khách hàng | Nhân viên tiếp nhận | US1 – MUST |
-| EP4 | `POST` | `/api/tickets` | Tạo phiếu bảo hành; máy chủ đề xuất nhóm sự cố/mức ưu tiên nếu cần | Nhân viên tiếp nhận | US2, US4 – MUST cho tạo phiếu; US4 là SHOULD |
-| EP5 | `GET` | `/api/tickets` | Xem danh sách phiếu, lọc theo trạng thái/người phụ trách/quá hạn hoặc thiết bị; phân trang | Quản lý trung tâm, Kỹ thuật viên theo quyền | US5, US7 – SHOULD |
-| EP6 | `PATCH` | `/api/tickets/{ticket_id}/status` | Chuyển trạng thái và ghi lịch sử | Kỹ thuật viên theo quyền | US6 – COULD |
-
-**Truy vết tổng quát:** US1 → FR1 → UC1; US2 → FR2 → UC2; US3 → FR3 → UC3; US4 → FR4 → UC4; US5 → FR5 → UC5; US6 → FR6 → UC6; US7 → FR7 → UC7. Các endpoint dưới đây là hợp đồng đề xuất, chưa khẳng định đã được hiện thực trong mã nguồn.
-
-## 1.3. EP1 – GET `/api/customers?phone={phone}` (US1)
-
-| Thuộc tính | Nội dung |
-|---|---|
-| **Mục đích** | Tra cứu khách hàng bằng số điện thoại. Chuẩn hóa số trước khi so khớp; khi tìm thấy, trả hồ sơ khách hàng và cho phép giao diện tải danh sách thiết bị qua EP3. |
-| **Tham số** | Query bắt buộc: `phone`. Chấp nhận số điện thoại chuẩn hóa được về 10 chữ số bắt đầu bằng `0`; có thể loại bỏ khoảng trắng, dấu `-`, dấu ngoặc và chuyển tiền tố `+84` về `0` theo QT02. |
-| **Quyền** | Người dùng đã đăng nhập và có quyền tiếp nhận/tra cứu khách hàng trong phạm vi được cấp. |
-| **Truy vết** | US1 → FR1 → UC1; số điện thoại phản hồi phải được che theo NFR2 nếu người gọi không phải Quản lý trung tâm. |
-
-### Request mẫu
-
-```http
-GET /api/customers?phone=%2B84%20901%20234%20567 HTTP/1.1
-Authorization: Bearer <access_token>
-```
-
-### Response mẫu – `200 OK`
-
-```json
-{
-  "customer_id": 1024,
-  "full_name": "Nguyễn Minh Anh",
-  "phone": "090****567",
-  "address": "Quận Bình Thạnh, TP. Hồ Chí Minh",
-  "segment": "CA_NHAN"
-}
-```
-
-### Mã trạng thái HTTP
-
-| Mã | Khi nào | `error.code` |
+| `error` | HTTP | Khi nào |
 |---|---|---|
-| `200` | Tìm thấy khách hàng. Số điện thoại được che theo vai trò. | — |
-| `400` | Thiếu `phone`, không chuẩn hóa được về 10 chữ số bắt đầu bằng `0`. | `VALIDATION_FAILED` |
-| `401` | Token thiếu, sai hoặc hết hạn. | `UNAUTHENTICATED` |
-| `403` | Người gọi không có quyền tra cứu. | `FORBIDDEN` |
-| `404` | Không có khách hàng khớp số điện thoại. Giao diện đề nghị tạo khách hàng mới qua EP2. | `CUSTOMER_NOT_FOUND` |
+| `CHUA_XAC_THUC` | 401 | Vai trò/phiên không hợp lệ. |
+| `KHONG_DU_QUYEN` | 403 | Vai trò không được thực hiện thao tác. |
+| `DU_LIEU_KHONG_HOP_LE` | 400 | Thiếu hoặc sai trường, sai kiểu, ngoài khoảng cho phép, JSON hỏng. |
+| `KHONG_TIM_THAY` | 404 | Không có bản ghi (hoặc nằm ngoài trung tâm của người gọi), hoặc đường dẫn không tồn tại. |
+| `THIET_BI_KHONG_THUOC_KHACH_HANG` | 422 | Thiết bị không tồn tại hoặc không thuộc `customer_id` gửi lên. |
+| `THIET_BI_DANG_CO_PHIEU_MO` | 409 | Thiết bị đã có phiếu chưa đóng (QT03). |
+| `CAN_QUAN_LY_PHE_DUYET` | 422 | Thiết bị hết bảo hành hoặc không có ngày mua mà chưa có `approved_by` (QT01). |
+| `NHOM_SU_CO_KHONG_TON_TAI` | 422 | `category_id` không có trong danh mục nhóm sự cố. |
+| `CHUYEN_TRANG_THAI_KHONG_HOP_LE` | 422 | Chuyển trạng thái không nằm trong vòng đời cho phép (QT03). |
+| `XUNG_DOT_TRANG_THAI` | 409 | Trạng thái phiếu vừa bị người khác thay đổi trong lúc xử lý. |
+| `LOI_HE_THONG` | 500 | Lỗi không lường trước; giao dịch được rollback, client không nhận chi tiết kỹ thuật. |
+| `SDT_DA_TON_TAI` | 409 | (EP2, chưa hiện thực) Số điện thoại đã có hồ sơ khách hàng. |
 
-Ví dụ lỗi `400`:
+## 1.3. Danh sách endpoint
 
-```json
-{
-  "error": {
-    "code": "VALIDATION_FAILED",
-    "message": "Số điện thoại phải gồm 10 chữ số và bắt đầu bằng 0.",
-    "fields": { "phone": "INVALID_PHONE" }
-  }
-}
-```
+| Mã | Phương thức | Đường dẫn | Mục đích | Vai trò | User Story / MoSCoW | Hiện thực |
+|---|---|---|---|---|---|---|
+| EP1 | `GET` | `/api/customers?phone={phone}` | Tra cứu khách hàng theo số điện thoại đã chuẩn hóa | Nhân viên tiếp nhận | US1 – MUST | Chưa làm |
+| EP2 | `POST` | `/api/customers` | Tạo khách hàng mới nếu số điện thoại chưa tồn tại | Nhân viên tiếp nhận | US3 – MUST | Chưa làm |
+| EP3 | `GET` | `/api/customers/{customer_id}/devices` | Danh sách thiết bị của khách hàng | Nhân viên tiếp nhận | US1 – MUST | Chưa làm |
+| EP4 | `POST` | `/api/tickets` | Tạo phiếu bảo hành | Nhân viên tiếp nhận | US2 – MUST (US4 – SHOULD, đề xuất phân loại) | Đã làm (US4 chưa làm) |
+| EP5 | `GET` | `/api/tickets` | Danh sách phiếu, lọc theo trạng thái, phân trang | Mọi vai trò, trong trung tâm của mình | US5 – SHOULD | Đã làm một phần |
+| EP6 | `PATCH` | `/api/tickets/{ticket_id}/status` | Chuyển trạng thái và ghi lịch sử | Kỹ thuật viên | US6 – COULD | Đã làm |
+| EP7 | `GET` | `/api/tickets/{ticket_id}` | Chi tiết một phiếu | Mọi vai trò, trong trung tâm của mình | US5 – SHOULD | Đã làm |
 
-## 1.4. EP2 – POST `/api/customers` (US3)
+**Truy vết tổng quát:** US1 → FR1 → UC1; US2 → FR2 → UC2; US3 → FR3 → UC3; US4 → FR4 → UC4; US5 → FR5 → UC5; US6 → FR6 → UC6; US7 → FR7 → UC7.
 
-| Thuộc tính | Nội dung |
-|---|---|
-| **Mục đích** | Tạo hồ sơ khách hàng mới khi số điện thoại chưa tồn tại. Số điện thoại được chuẩn hóa trước khi lưu và phải duy nhất. |
-| **Body** | `full_name`, `phone` bắt buộc; `email`, `address` tùy chọn theo SRS. |
-| **Quyền** | Nhân viên tiếp nhận đã đăng nhập và được phép tiếp nhận khách hàng. |
-| **Truy vết** | US3 → FR3 → UC3; ràng buộc UNIQUE trên số điện thoại để tránh tạo hồ sơ trùng khi hai yêu cầu đồng thời. |
-
-### Request mẫu
-
-```http
-POST /api/customers HTTP/1.1
-Authorization: Bearer <access_token>
-Content-Type: application/json
-
-{
-  "full_name": "Nguyễn Minh Anh",
-  "phone": "0901234567",
-  "email": "minhanh@example.com",
-  "address": "Quận Bình Thạnh, TP. Hồ Chí Minh"
-}
-```
-
-### Response mẫu – `201 Created`
-
-```json
-{
-  "customer_id": 1024,
-  "full_name": "Nguyễn Minh Anh",
-  "phone": "090****567",
-  "email": "minhanh@example.com",
-  "address": "Quận Bình Thạnh, TP. Hồ Chí Minh",
-  "created_at": "2026-10-19T14:30:00+07:00"
-}
-```
-
-### Mã trạng thái HTTP
-
-| Mã | Khi nào | `error.code` |
-|---|---|---|
-| `201` | Tạo hồ sơ thành công. | — |
-| `400` | Thiếu/sai `full_name` hoặc `phone`; tên vượt 120 ký tự; số điện thoại sai định dạng. | `VALIDATION_FAILED` |
-| `401` | Token thiếu, sai hoặc hết hạn. | `UNAUTHENTICATED` |
-| `403` | Người gọi không có quyền tạo khách hàng. | `FORBIDDEN` |
-| `409` | Số điện thoại đã được tạo bởi yêu cầu trước hoặc người dùng khác. Không tạo bản ghi thứ hai; trả `customer_id` hiện có để giao diện tiếp tục. | `PHONE_ALREADY_EXISTS` |
-
-Ví dụ lỗi `409`:
-
-```json
-{
-  "error": {
-    "code": "PHONE_ALREADY_EXISTS",
-    "message": "Số điện thoại đã có trong hệ thống. Hãy sử dụng hồ sơ khách hàng hiện có.",
-    "fields": { "customer_id": 1024 }
-  }
-}
-```
-
-## 1.5. EP3 – GET `/api/customers/{customer_id}/devices` (US1)
+## 1.4. EP4 – POST `/api/tickets` (US2, US4) – Đã làm
 
 | Thuộc tính | Nội dung |
 |---|---|
-| **Mục đích** | Trả danh sách thiết bị thuộc khách hàng để nhân viên chọn thiết bị cần bảo hành. |
-| **Tham số** | Path: `customer_id`. |
-| **Quyền** | Người dùng đã đăng nhập, có quyền tra cứu khách hàng trong phạm vi được cấp. |
-| **Truy vết** | US1 → FR1 → UC1; dữ liệu thiết bị phục vụ lựa chọn `device_id` ở EP4 và kiểm tra QT01. |
-
-### Request mẫu
-
-```http
-GET /api/customers/1024/devices HTTP/1.1
-Authorization: Bearer <access_token>
-```
-
-### Response mẫu – `200 OK`
-
-```json
-{
-  "customer_id": 1024,
-  "items": [
-    {
-      "device_id": 3311,
-      "product_name": "Điện thoại mẫu A",
-      "serial_no": "SN-ABC12345",
-      "purchase_date": "2025-03-10",
-      "warranty_months": 12
-    }
-  ],
-  "total": 1
-}
-```
-
-### Mã trạng thái HTTP
-
-| Mã | Khi nào | `error.code` |
-|---|---|---|
-| `200` | Tìm thấy khách hàng; `items` có thể là mảng rỗng. | — |
-| `401` | Token thiếu, sai hoặc hết hạn. | `UNAUTHENTICATED` |
-| `403` | Không có quyền truy cập dữ liệu khách hàng. | `FORBIDDEN` |
-| `404` | `customer_id` không tồn tại. | `CUSTOMER_NOT_FOUND` |
-
-## 1.6. EP4 – POST `/api/tickets` (US2, US4)
-
-| Thuộc tính | Nội dung |
-|---|---|
-| **Mục đích** | Tạo phiếu bảo hành mới, sinh mã phiếu, xác định trạng thái ban đầu `MOI`, kiểm tra điều kiện bảo hành và phiếu đang mở, tính hạn cam kết, đồng thời lưu bản ghi lịch sử trạng thái đầu tiên. |
-| **Body** | Bắt buộc: `customer_id`, `device_id`, `center_id`, `issue_desc`. Tùy chọn: `category_id`, `priority`, `accessories`, `approved_by`. `category_id`/`priority` có thể do hệ thống đề xuất và nhân viên xác nhận/điều chỉnh. |
-| **Quyền** | Nhân viên tiếp nhận; Quản lý trung tâm chỉ khi được phân quyền tạo phiếu. `center_id` phải thuộc phạm vi trung tâm của người gọi. |
-| **Giao dịch** | Ghi `ticket` và `ticket_status_log` trong cùng một transaction. Nếu một bước thất bại, rollback toàn bộ. `Idempotency-Key` giúp không tạo phiếu trùng khi gửi lại. |
-| **Truy vết** | US2 → FR2 → UC2; US4 → FR4 → UC4; QT01 (bảo hành), QT02 (phân loại/hạn cam kết), QT03 (một thiết bị tối đa một phiếu chưa đóng); NFR1 và NFR3. |
+| **Mục đích** | Tạo phiếu bảo hành: sinh mã phiếu, đặt trạng thái `MOI`, kiểm tra thiết bị thuộc khách hàng, phiếu đang mở (QT03) và bảo hành (QT01), tính hạn cam kết (QT02), ghi dòng đầu của `ticket_status_log`. |
+| **Body** | Bắt buộc: `customer_id`, `device_id`, `issue_desc`. Tùy chọn: `category_id`, `priority`, `accessories`, `approved_by`. `center_id` không nằm trong body. |
+| **Quyền** | Chỉ `NHAN_VIEN_TIEP_NHAN`. |
+| **Giao dịch** | `ticket` và `ticket_status_log` ghi trong cùng một giao dịch (BEGIN/COMMIT, rollback khi lỗi). |
+| **Truy vết** | US2 → FR2 → UC2; QT01, QT02, QT03; NFR1, NFR3. |
 
 ### Request mẫu
 
 ```http
 POST /api/tickets HTTP/1.1
-Authorization: Bearer <access_token>
 Content-Type: application/json
 Idempotency-Key: 8b4e3a22-9f11-4b55-a7c1-123456789abc
+x-role: NHAN_VIEN_TIEP_NHAN
+x-employee-id: 1
+x-center-id: 1
 
 {
-  "customer_id": 1024,
-  "device_id": 3311,
-  "center_id": 2,
-  "issue_desc": "Máy sạc không vào, cắm sạc nhưng không nhận phụ kiện.",
+  "customer_id": 34018,
+  "device_id": 63,
   "category_id": 3,
-  "priority": "TRUNG_BINH",
+  "issue_desc": "Máy sạc không vào, cắm sạc nhưng không nhận phụ kiện.",
   "accessories": ["SAC", "HOP"]
 }
 ```
@@ -223,271 +91,297 @@ Idempotency-Key: 8b4e3a22-9f11-4b55-a7c1-123456789abc
 
 ```json
 {
-  "ticket_id": 231,
-  "ticket_code": "BH-000231/2026",
-  "customer_id": 1024,
-  "device_id": 3311,
-  "center_id": 2,
-  "issue_desc": "Máy sạc không vào, cắm sạc nhưng không nhận phụ kiện.",
-  "category_id": 3,
-  "category_code": "SAC",
-  "priority": "TRUNG_BINH",
-  "status": "MOI",
-  "is_warranty": true,
-  "received_at": "2026-10-19T14:30:00+07:00",
-  "due_date": "2026-10-22T14:30:00+07:00"
+  "data": {
+    "ticket_id": 7801,
+    "ticket_code": "BH-007801/2026",
+    "customer_id": 34018,
+    "device_id": 63,
+    "category_id": 3,
+    "center_id": 1,
+    "issue_desc": "Máy sạc không vào, cắm sạc nhưng không nhận phụ kiện.",
+    "priority": "TRUNG_BINH",
+    "status": "MOI",
+    "received_at": "2026-10-20T10:37:19.199Z",
+    "due_date": "2026-10-23T10:37:19.199Z",
+    "closed_at": null,
+    "is_warranty": true,
+    "technician_id": null,
+    "accessories": ["SAC", "HOP"]
+  }
 }
 ```
 
-`due_date` trong ví dụ minh họa cho ưu tiên `TRUNG_BINH` (72 giờ làm việc theo quy tắc thứ Hai–thứ Bảy). Giá trị thực tế phải do máy chủ tính theo thời điểm tiếp nhận và lịch làm việc; không sao chép cứng ngày ví dụ. Nếu không đề xuất được nhóm sự cố, `category_id` có thể là `null`; ưu tiên mặc định `TRUNG_BINH`.
+Mã phiếu, id và thời điểm trong ví dụ chỉ để minh họa; giá trị thật do máy chủ sinh. `priority` ở ví dụ là `TRUNG_BINH` vì client không gửi và nhóm sự cố `SAC` có mức mặc định `TRUNG_BINH`.
 
 ### Mã trạng thái HTTP
 
-| Mã | Khi nào | `error.code` |
+| Mã | Khi nào | `error` |
 |---|---|---|
-| `201` | Phiếu được tạo thành công; trả mã phiếu, trạng thái và hạn cam kết. | — |
-| `400` | Thiếu/sai trường, `issue_desc` ngoài 10–2000 ký tự, `priority` hoặc phụ kiện không hợp lệ, hoặc thiết bị không thuộc khách hàng được gửi. | `VALIDATION_FAILED` |
-| `401` | Token thiếu, sai hoặc hết hạn. | `UNAUTHENTICATED` |
-| `403` | Người gọi không có quyền tạo phiếu hoặc `center_id` ngoài phạm vi. | `FORBIDDEN` |
-| `404` | `customer_id` hoặc `device_id` không tồn tại. | `CUSTOMER_NOT_FOUND` / `DEVICE_NOT_FOUND` |
-| `409` | Thiết bị đã có phiếu bảo hành chưa đóng (UC2-8b/QT03); không tạo phiếu mới. | `DEVICE_HAS_OPEN_TICKET` |
-| `422` | Thiết bị hết hạn bảo hành hoặc không có ngày mua mà chưa có phê duyệt hợp lệ của Quản lý trung tâm (UC2-8a/QT01). | `WARRANTY_EXPIRED` |
-| `500` | Lỗi lưu dữ liệu; transaction rollback, không để lại phiếu/log dở dang. | `INTERNAL_ERROR` |
+| `201` | Tạo phiếu thành công. | — |
+| `200` | Gửi lại cùng `Idempotency-Key`: trả lại phiếu đã tạo, không tạo phiếu mới. | — |
+| `400` | Thiếu/sai trường, `issue_desc` ngoài 10–2000 ký tự, `priority` hoặc `accessories` không hợp lệ, JSON hỏng. | `DU_LIEU_KHONG_HOP_LE` |
+| `401` | Vai trò không hợp lệ. | `CHUA_XAC_THUC` |
+| `403` | Vai trò khác `NHAN_VIEN_TIEP_NHAN`. | `KHONG_DU_QUYEN` |
+| `409` | Thiết bị đã có phiếu chưa đóng (UC2-8b, QT03). | `THIET_BI_DANG_CO_PHIEU_MO` |
+| `422` | Thiết bị không tồn tại hoặc không thuộc khách hàng. | `THIET_BI_KHONG_THUOC_KHACH_HANG` |
+| `422` | Hết bảo hành hoặc thiếu ngày mua và chưa có `approved_by` (UC2-8a, QT01). | `CAN_QUAN_LY_PHE_DUYET` |
+| `422` | `category_id` không có trong danh mục. | `NHOM_SU_CO_KHONG_TON_TAI` |
+| `500` | Lỗi lưu dữ liệu; giao dịch rollback. | `LOI_HE_THONG` |
+
+Ví dụ lỗi `400`:
+
+```json
+{
+  "error": "DU_LIEU_KHONG_HOP_LE",
+  "message": "Dữ liệu gửi lên không hợp lệ",
+  "details": [
+    { "field": "customer_id", "message": "bắt buộc, số nguyên dương" },
+    { "field": "device_id", "message": "bắt buộc, số nguyên dương" },
+    { "field": "issue_desc", "message": "bắt buộc, dài 10–2000 ký tự" }
+  ]
+}
+```
 
 Ví dụ lỗi `409`:
 
 ```json
 {
-  "error": {
-    "code": "DEVICE_HAS_OPEN_TICKET",
-    "message": "Thiết bị đang có phiếu bảo hành chưa đóng.",
-    "fields": { "open_ticket_code": "BH-000198/2026" }
-  }
+  "error": "THIET_BI_DANG_CO_PHIEU_MO",
+  "message": "Thiết bị đang có phiếu chưa đóng: BH-007801/2026"
 }
 ```
+
+Ví dụ lỗi `422` (QT01):
+
+```json
+{
+  "error": "CAN_QUAN_LY_PHE_DUYET",
+  "message": "Thiết bị hết bảo hành hoặc không có ngày mua, cần Quản lý trung tâm phê duyệt"
+}
+```
+
+### Bảng kiểm tra dữ liệu EP4
+
+| Trường | Bắt buộc | Kiểu / ràng buộc |
+|---|---|---|
+| `customer_id` | Có | Số nguyên dương. Thiết bị phải thuộc khách hàng này. |
+| `device_id` | Có | Số nguyên dương; phải tồn tại. |
+| `issue_desc` | Có | Chuỗi 10–2000 ký tự sau khi bỏ khoảng trắng hai đầu. |
+| `category_id` | Không | Số nguyên dương có trong `issue_category`; có thể bỏ trống hoặc `null`. |
+| `priority` | Không | `CAO`, `TRUNG_BINH`, `THAP`; bỏ trống thì dùng mức mặc định của nhóm sự cố, không có nhóm thì `TRUNG_BINH`. |
+| `accessories` | Không | Mảng, mỗi phần tử thuộc `SAC`, `TAI_NGHE`, `HOP`, `KHAC`. |
+| `approved_by` | Không | Số nguyên dương là mã nhân viên phê duyệt. Bắt buộc về nghiệp vụ khi thiết bị hết bảo hành hoặc thiếu ngày mua. (Chưa làm) Việc kiểm tra người phê duyệt có vai trò Quản lý trung tâm chưa hiện thực. |
+| `Idempotency-Key` (header) | Khuyến nghị | Chuỗi duy nhất cho một lần gửi; giữ nguyên khi gửi lại cùng thao tác. |
+
+### Đề xuất phân loại tự động (US4) – Chưa làm
+
+Chưa hiện thực trong Sprint 1: client gửi `category_id`; máy chủ chỉ suy ra mức ưu tiên từ `default_priority` của nhóm. Thiết kế dự kiến là quy tắc từ khóa (không dùng học máy trong phạm vi L2):
+
+| Từ khóa ví dụ trong mô tả | Nhóm sự cố đề xuất |
+|---|---|
+| `màn hình`, `vỡ`, `sọc` | `MAN_HINH` |
+| `pin`, `tụt pin` | `PIN` |
+| `sạc`, `cổng sạc`, `không vào điện` | `SAC` |
+| `phần mềm`, `ứng dụng`, `khởi động` | `PHAN_MEM` |
+| `nước`, `vào nước`, `ẩm` | `NUOC_VAO` |
+| Không khớp | `null`, ưu tiên `TRUNG_BINH` |
+
+## 1.5. EP5 – GET `/api/tickets` (US5) Đã làm một phần
+
+| Thuộc tính | Nội dung |
+|---|---|
+| **Mục đích** | Danh sách phiếu của trung tâm người gọi, sắp xếp `due_date` tăng dần (phiếu gần hạn nhất trước). |
+| **Query đã hiện thực** | `status` (một trong 7 trạng thái), `page`, `size`. |
+| **Query chưa hiện thực** | `assignee_id`, `overdue`, `device_id` (lịch sử thiết bị và cảnh báo lỗi lặp lại – US7/FR7). |
+| **Quyền** | Mọi vai trò hợp lệ, trong phạm vi trung tâm của mình. |
+| **Hiệu năng** | Lọc, sắp xếp và phân trang thực hiện trong SQL, dùng index `idx_ticket_center_status_due` (NFR1: 95% yêu cầu dưới 2 giây với 10.000 phiếu). |
+
+### Request mẫu
+
+```http
+GET /api/tickets?status=MOI&page=1&size=20 HTTP/1.1
+x-role: QUAN_LY_TRUNG_TAM
+x-center-id: 1
+```
+
+### Response mẫu – `200 OK`
+
+```json
+{
+  "data": [
+    {
+      "ticket_id": 7801,
+      "ticket_code": "BH-007801/2026",
+      "customer_id": 34018,
+      "device_id": 63,
+      "category_id": 3,
+      "center_id": 1,
+      "issue_desc": "Máy sạc không vào, cắm sạc nhưng không nhận phụ kiện.",
+      "priority": "TRUNG_BINH",
+      "status": "MOI",
+      "received_at": "2026-10-20T10:37:19.199Z",
+      "due_date": "2026-10-23T10:37:19.199Z",
+      "closed_at": null,
+      "is_warranty": true,
+      "technician_id": null,
+      "accessories": ["SAC", "HOP"],
+      "customer_name": "Đỗ Đức Cường",
+      "customer_phone": "078****918",
+      "product_name": "Samsung Note 8",
+      "serial_no": "SN928032948926",
+      "category_name": "SAC"
+    }
+  ],
+  "paging": { "page": 1, "size": 20, "total": 1, "total_pages": 1 }
+}
+```
+
+### Mã trạng thái HTTP
+
+| Mã | Khi nào | `error` |
+|---|---|---|
+| `200` | Thành công, kể cả khi không có phiếu khớp (`data: []`, `total: 0`). | — |
+| `400` | `status` không thuộc danh sách; `page` < 1; `size` ngoài 1–100. | `DU_LIEU_KHONG_HOP_LE` |
+| `401` | Vai trò không hợp lệ. | `CHUA_XAC_THUC` |
+
+## 1.6. EP7 – GET `/api/tickets/{ticket_id}` (US5) – Đã làm
+
+Trả chi tiết một phiếu, cùng các trường nối như một phần tử của EP5 (`customer_name`, `customer_phone`, `product_name`, `serial_no`, `category_name`), bọc trong `{"data": { ... }}`.
+
+| Mã | Khi nào | `error` |
+|---|---|---|
+| `200` | Tìm thấy phiếu của trung tâm người gọi. | — |
+| `400` | `ticket_id` không phải số nguyên dương. | `DU_LIEU_KHONG_HOP_LE` |
+| `401` | Vai trò không hợp lệ. | `CHUA_XAC_THUC` |
+| `404` | Không có phiếu, hoặc phiếu thuộc trung tâm khác. | `KHONG_TIM_THAY` |
+
+## 1.7. EP6 – PATCH `/api/tickets/{ticket_id}/status` (US6) – Đã làm
+
+| Thuộc tính | Nội dung |
+|---|---|
+| **Mục đích** | Chuyển trạng thái phiếu theo vòng đời và ghi một dòng vào `ticket_status_log` (trạng thái cũ, mới, thời điểm, người thực hiện, ghi chú) trong cùng giao dịch. |
+| **Body** | `to_status` bắt buộc (một trong 7 trạng thái); `note` tùy chọn, chuỗi tối đa 255 ký tự. |
+| **Quyền** | Chỉ `KY_THUAT_VIEN`. Người thực hiện lấy từ `x-employee-id`. |
+| **Truy vết** | US6 → FR6 → UC6; QT03: không quay lại trạng thái trước, mỗi lần chuyển lưu thời điểm và người thực hiện. |
+
+### Vòng đời trạng thái cho phép
+
+| Từ trạng thái | Được chuyển tới |
+|---|---|
+| `MOI` | `DA_PHAN_CONG`, `DA_HUY` |
+| `DA_PHAN_CONG` | `DANG_XU_LY`, `DA_HUY` |
+| `DANG_XU_LY` | `CHO_LINH_KIEN`, `HOAN_TAT`, `DA_HUY` |
+| `CHO_LINH_KIEN` | `HOAN_TAT`, `DA_HUY` |
+| `HOAN_TAT` | `DA_DONG` |
+| `DA_DONG`, `DA_HUY` | (không chuyển tiếp) |
+
+Khi chuyển sang `DA_DONG` hoặc `DA_HUY`, máy chủ ghi `closed_at`.
+
+### Request mẫu
+
+```http
+PATCH /api/tickets/7801/status HTTP/1.1
+Content-Type: application/json
+x-role: KY_THUAT_VIEN
+x-employee-id: 2
+x-center-id: 1
+
+{
+  "to_status": "DA_PHAN_CONG",
+  "note": "Nhận phiếu"
+}
+```
+
+### Response mẫu – `200 OK`
+
+Trả toàn bộ phiếu sau khi cập nhật, cùng dạng với EP7: `{"data": { "ticket_id": 7801, "ticket_code": "BH-007801/2026", "status": "DA_PHAN_CONG", ... }}`.
+
+### Mã trạng thái HTTP
+
+| Mã | Khi nào | `error` |
+|---|---|---|
+| `200` | Chuyển trạng thái hợp lệ; phiếu và lịch sử cập nhật cùng giao dịch. | — |
+| `400` | Thiếu hoặc sai `to_status`; `note` không phải chuỗi hoặc quá 255 ký tự; `ticket_id` không hợp lệ. | `DU_LIEU_KHONG_HOP_LE` |
+| `401` | Vai trò không hợp lệ. | `CHUA_XAC_THUC` |
+| `403` | Vai trò khác `KY_THUAT_VIEN`. | `KHONG_DU_QUYEN` |
+| `404` | Không có phiếu, hoặc phiếu thuộc trung tâm khác. | `KHONG_TIM_THAY` |
+| `422` | Chuyển trạng thái ngoài vòng đời cho phép, gồm chuyển lùi; phiếu và lịch sử không đổi. | `CHUYEN_TRANG_THAI_KHONG_HOP_LE` |
+| `409` | Trạng thái phiếu vừa bị người khác đổi trong lúc xử lý. | `XUNG_DOT_TRANG_THAI` |
 
 Ví dụ lỗi `422`:
 
 ```json
 {
-  "error": {
-    "code": "WARRANTY_EXPIRED",
-    "message": "Thiết bị đã hết bảo hành hoặc thiếu ngày mua; cần Quản lý trung tâm phê duyệt.",
-    "fields": {
-      "purchase_date": "2024-06-01",
-      "warranty_months": 12,
-      "approved_by_required": true
-    }
-  }
+  "error": "CHUYEN_TRANG_THAI_KHONG_HOP_LE",
+  "message": "Không được chuyển từ DA_PHAN_CONG sang MOI"
 }
 ```
 
-### Bảng validation EP4
+## 1.8. EP1–EP3 – Nhóm khách hàng – Chưa làm (đã thiết kế, chưa hiện thực)
 
-| Trường | Bắt buộc | Kiểu / ràng buộc | Khi sai |
+Dùng cùng quy ước thành công `{"data": ...}` và định dạng lỗi ở mục 1.1. Số điện thoại được chuẩn hóa theo QT02 trước khi so khớp hoặc lưu (chấp nhận khoảng trắng, dấu chấm, tiền tố `84` và `+84`), hàm `normalizePhone` đã có sẵn trong `src/backend/utils/phone.js`.
+
+| Endpoint | Đầu vào | Thành công | Lỗi chính |
 |---|---|---|---|
-| `customer_id` | Có | Số nguyên dương; phải tồn tại. | `400` hoặc `404 CUSTOMER_NOT_FOUND` |
-| `device_id` | Có | Số nguyên dương; phải tồn tại và thuộc `customer_id`. | `400` hoặc `404 DEVICE_NOT_FOUND` |
-| `center_id` | Có | Số nguyên dương; thuộc phạm vi trung tâm của người gọi. | `400` hoặc `403 FORBIDDEN` |
-| `issue_desc` | Có | Chuỗi 10–2000 ký tự sau khi trim. | `400 VALIDATION_FAILED` |
-| `category_id` | Không | ID nhóm sự cố hợp lệ; cho phép `null` nếu chưa đề xuất được. | `400 VALIDATION_FAILED` |
-| `priority` | Không | `CAO`, `TRUNG_BINH`, `THAP`; nếu bỏ trống dùng đề xuất, nếu không có đề xuất thì `TRUNG_BINH`. | `400 VALIDATION_FAILED` |
-| `accessories` | Không | Mảng không trùng phần tử; mỗi phần tử thuộc `SAC`, `TAI_NGHE`, `HOP`, `KHAC`. | `400 VALIDATION_FAILED` |
-| `approved_by` | Không | ID quản lý trung tâm hợp lệ; bắt buộc về mặt nghiệp vụ khi thiết bị hết hạn/thiếu ngày mua. | `400` hoặc `422 WARRANTY_EXPIRED` |
-| `Idempotency-Key` | Khuyến nghị | Chuỗi duy nhất cho một lần gửi tạo phiếu; giữ nguyên khi retry cùng thao tác. | Nếu cùng khóa nhưng payload khác nhau, trả lỗi xung đột theo chính sách idempotency của triển khai. |
-
-### Quy tắc đề xuất phân loại (US4)
-
-Việc đề xuất được thực hiện từ `issue_desc` bằng quy tắc từ khóa, không phải mô hình học máy trong phạm vi L2:
-
-| Từ khóa ví dụ trong mô tả | `category_code` đề xuất |
-|---|---|
-| `màn hình`, `vỡ`, `sọc` | `MAN_HINH` |
-| `pin`, `tụt pin`, `sạc pin` | `PIN` |
-| `sạc`, `cổng sạc`, `không vào điện` | `SAC` |
-| `phần mềm`, `ứng dụng`, `khởi động` | `PHAN_MEM` |
-| `nước`, `vào nước`, `ẩm` | `NUOC_VAO` |
-| Không khớp quy tắc | `null`; ưu tiên mặc định `TRUNG_BINH` |
-
-Nếu nhiều nhóm cùng khớp, quy tắc ưu tiên cần được xác định nhất quán trong phần triển khai; nhân viên tiếp nhận vẫn có quyền xác nhận/điều chỉnh trước khi lưu. Bảng từ khóa trên là ví dụ khởi đầu, cần kiểm thử với dữ liệu thực tế.
-
-## 1.7. EP5 – GET `/api/tickets` (US5, US7)
-
-| Thuộc tính | Nội dung |
-|---|---|
-| **Mục đích** | Lấy danh sách phiếu theo bộ lọc; mặc định sắp xếp `due_date` tăng dần. Khi có `device_id`, trả lịch sử phiếu của thiết bị và cảnh báo lỗi lặp lại. |
-| **Query** | Tùy chọn: `status`, `assignee_id`, `overdue`, `device_id`, `page`, `size`. `overdue=true` lọc phiếu đã quá hạn nhưng chưa hoàn tất/đóng/hủy. |
-| **Quyền** | Quản lý trung tâm xem danh sách phục vụ theo dõi hạn cam kết; Kỹ thuật viên xem danh sách/lịch sử theo quyền và phạm vi được cấp. Dữ liệu ngoài trung tâm bị từ chối. |
-| **Truy vết** | US5 → FR5 → UC5; US7 → FR7 → UC7; NFR1: 95% yêu cầu xem danh sách dưới 2 giây với 10.000 phiếu và 20 người dùng đồng thời. |
-
-### Request mẫu – danh sách phiếu
-
-```http
-GET /api/tickets?status=MOI&page=1&size=20 HTTP/1.1
-Authorization: Bearer <access_token>
-```
-
-### Response mẫu – `200 OK`
-
-```json
-{
-  "items": [
-    {
-      "ticket_id": 231,
-      "ticket_code": "BH-000231/2026",
-      "status": "MOI",
-      "priority": "TRUNG_BINH",
-      "due_date": "2026-10-22T14:30:00+07:00",
-      "customer_name": "Nguyễn Minh Anh",
-      "customer_phone": "090****567",
-      "assignee_id": null,
-      "category_name": "Sạc"
-    }
-  ],
-  "page": 1,
-  "size": 20,
-  "total": 1
-}
-```
-
-### Request mẫu – lịch sử của một thiết bị (US7)
-
-```http
-GET /api/tickets?device_id=3311&page=1&size=20 HTTP/1.1
-Authorization: Bearer <access_token>
-```
-
-Khi truy vấn theo `device_id`, mỗi item cần có tối thiểu `ticket_code`, `received_at`, `status`, `category_code` và `category_name`. `repeat_warning` bằng `true` khi thiết bị có từ ba phiếu bảo hành cùng nhóm sự cố theo FR7; nếu không, bằng `false`.
-
-Ví dụ phần tử lịch sử:
-
-```json
-{
-  "ticket_code": "BH-000231/2026",
-  "received_at": "2026-10-19T14:30:00+07:00",
-  "status": "MOI",
-  "category_code": "PIN",
-  "category_name": "Pin",
-  "repeat_warning": true
-}
-```
-
-### Mã trạng thái HTTP
-
-| Mã | Khi nào | `error.code` |
-|---|---|---|
-| `200` | Thành công, kể cả khi không có phiếu khớp (`items: []`, `total: 0`). | — |
-| `400` | `status`, `overdue`, `page` hoặc `size` sai; `page < 1`, `size` ngoài 1–100. | `VALIDATION_FAILED` |
-| `401` | Token thiếu, sai hoặc hết hạn. | `UNAUTHENTICATED` |
-| `403` | Vai trò không được xem danh sách hoặc truy cập ngoài phạm vi trung tâm. | `FORBIDDEN` |
-
-## 1.8. EP6 – PATCH `/api/tickets/{ticket_id}/status` (US6)
-
-| Thuộc tính | Nội dung |
-|---|---|
-| **Mục đích** | Chuyển trạng thái phiếu theo vòng đời hợp lệ và ghi lịch sử vào `ticket_status_log` trong cùng transaction. |
-| **Body** | `to_status` bắt buộc; `note` tùy chọn, tối đa 255 ký tự nếu được dùng để giải thích việc chuyển trạng thái. |
-| **Quyền** | Kỹ thuật viên được phân công hoặc người có quyền trên phiếu; chỉ thao tác phiếu thuộc phạm vi được cấp. |
-| **Truy vết** | US6 → FR6 → UC6; QT03: không quay lại trạng thái trước, mỗi lần chuyển phải lưu thời điểm và người thực hiện. |
-
-### Request mẫu
-
-```http
-PATCH /api/tickets/231/status HTTP/1.1
-Authorization: Bearer <access_token>
-Content-Type: application/json
-
-{
-  "to_status": "DANG_XU_LY",
-  "note": "Bắt đầu kiểm tra thiết bị."
-}
-```
-
-### Response mẫu – `200 OK`
-
-```json
-{
-  "ticket_id": 231,
-  "ticket_code": "BH-000231/2026",
-  "from_status": "MOI",
-  "to_status": "DANG_XU_LY",
-  "changed_at": "2026-10-19T15:00:00+07:00",
-  "changed_by": 77
-}
-```
-
-### Mã trạng thái HTTP
-
-| Mã | Khi nào | `error.code` |
-|---|---|---|
-| `200` | Chuyển trạng thái hợp lệ; phiếu và lịch sử được cập nhật cùng transaction. | — |
-| `400` | Thiếu `to_status`, giá trị trạng thái không được hỗ trợ hoặc `note` quá 255 ký tự. | `VALIDATION_FAILED` |
-| `401` | Token thiếu, sai hoặc hết hạn. | `UNAUTHENTICATED` |
-| `403` | Người gọi không có quyền cập nhật phiếu hoặc phiếu nằm ngoài phạm vi. | `FORBIDDEN` |
-| `404` | Không tìm thấy phiếu. | `TICKET_NOT_FOUND` |
-| `409` | Chuyển trạng thái không đúng vòng đời, gồm chuyển lùi về trạng thái trước. Phiếu và lịch sử không đổi. | `TICKET_STATE_INVALID` |
-
-**Lưu ý triển khai:** SRS quy định không được chuyển trạng thái ngược, nhưng cần thống nhất danh sách chuyển trạng thái hợp lệ cụ thể (ví dụ `MOI → DANG_XU_LY`, `DANG_XU_LY → CHO_LINH_KIEN/HOAN_TAT`) với sơ đồ trạng thái/DDL trước khi viết test.
+| EP1 `GET /api/customers?phone={phone}` | Query `phone` bắt buộc, chuẩn hóa được về 10 chữ số bắt đầu bằng `0`. | `200` với `data` gồm `customer_id`, `full_name`, `phone` (đã che), `address`. | `400 DU_LIEU_KHONG_HOP_LE` (số sai định dạng, UC2-3b); `404 KHONG_TIM_THAY` (chưa có khách, giao diện đề nghị tạo mới). |
+| EP2 `POST /api/customers` | Body: `full_name` (bắt buộc, tối đa 120 ký tự), `phone` (bắt buộc, duy nhất), `email`, `address` (tùy chọn). | `201` với hồ sơ vừa tạo. | `400 DU_LIEU_KHONG_HOP_LE`; `409 SDT_DA_TON_TAI` kèm `customer_id` hiện có khi hai yêu cầu đồng thời. |
+| EP3 `GET /api/customers/{customer_id}/devices` | Path `customer_id`. | `200` với `data` là mảng `device_id`, `product_name`, `serial_no`, `purchase_date`, `warranty_months` (có thể rỗng). | `404 KHONG_TIM_THAY` khi khách không tồn tại. |
 
 ## 1.9. Bảng kiểm tra các luồng ngoại lệ UC2
 
-| Mã ngoại lệ | Tình huống | Endpoint / phản hồi dự kiến | Kết quả cần bảo đảm |
+| Mã | Tình huống | Phản hồi thực tế | Hiện thực |
 |---|---|---|---|
-| UC2-3b | Số điện thoại không chuẩn hóa được về 10 chữ số bắt đầu bằng `0`. | EP1 trả `400 VALIDATION_FAILED`. | Không truy vấn/tạo khách hàng bằng số sai; giao diện giữ dữ liệu và yêu cầu nhập lại. |
-| UC2-6a | Không có quy tắc phân loại khớp mô tả lỗi. | Phần đề xuất trong EP4 trả `category_id: null`, `priority: TRUNG_BINH` nếu chưa nhập ưu tiên. | Nhân viên có thể chọn nhóm sự cố trước khi gửi yêu cầu tạo phiếu. |
-| UC2-7a | Mô tả lỗi trống hoặc ngoài 10–2000 ký tự. | EP4 trả `400 VALIDATION_FAILED`. | Không tạo `ticket` hoặc `ticket_status_log`; giữ nguyên nội dung form ở client. |
-| UC2-8a | Thiết bị hết bảo hành hoặc thiếu ngày mua, chưa có phê duyệt hợp lệ. | EP4 trả `422 WARRANTY_EXPIRED`. | Không tạo phiếu; yêu cầu phê duyệt của Quản lý trung tâm. |
-| UC2-8b | Thiết bị đã có phiếu bảo hành chưa đóng. | EP4 trả `409 DEVICE_HAS_OPEN_TICKET` và `open_ticket_code`. | Không tạo phiếu trùng cho cùng thiết bị. |
-| UC2-9a | Mất kết nối trong lúc lưu, người dùng gửi lại. | Client gửi lại cùng `Idempotency-Key`; máy chủ trả kết quả đã xử lý nếu lần đầu thành công. | Không tạo hai phiếu cho một thao tác; nếu lần đầu chưa ghi thành công thì có thể thử lại an toàn. |
+| UC2-3b | Số điện thoại không chuẩn hóa được. | EP1 trả `400 DU_LIEU_KHONG_HOP_LE`. | Chưa làm (EP1) |
+| UC2-6a | Không có quy tắc phân loại khớp mô tả. | `category_id` là `null`, ưu tiên `TRUNG_BINH` nếu client không gửi `priority`. | Đã làm |
+| UC2-7a | Mô tả lỗi trống hoặc ngoài 10–2000 ký tự. | EP4 trả `400`; không ghi `ticket` hay `ticket_status_log`. | Đã làm |
+| UC2-8a | Hết bảo hành hoặc thiếu ngày mua, chưa có phê duyệt. | EP4 trả `422 CAN_QUAN_LY_PHE_DUYET`; không tạo phiếu. | Đã làm |
+| UC2-8b | Thiết bị đã có phiếu chưa đóng. | EP4 trả `409 THIET_BI_DANG_CO_PHIEU_MO`; không tạo phiếu. Chỉ mục UNIQUE một phần trong CSDL chặn lần cuối khi hai yêu cầu đồng thời. | Đã làm |
+| UC2-9a | Mất kết nối khi lưu, người dùng gửi lại. | Gửi lại cùng `Idempotency-Key` thì trả phiếu đã tạo với `200`, không tạo phiếu thứ hai. | Đã làm |
 
-## 1.10. Bảng validation tổng hợp
-
-| Endpoint | Trường | Quy tắc | Khi sai |
-|---|---|---|---|
-| EP1 | `phone` | Bắt buộc; chuẩn hóa về 10 chữ số bắt đầu bằng `0`. | `400 VALIDATION_FAILED`; nếu hợp lệ nhưng không tồn tại thì `404 CUSTOMER_NOT_FOUND`. |
-| EP2 | `full_name` | Bắt buộc; sau trim không rỗng; tối đa 120 ký tự. | `400 VALIDATION_FAILED`. |
-| EP2 | `phone` | Bắt buộc; chuẩn hóa trước khi lưu; phải duy nhất. | `400` nếu sai định dạng; `409 PHONE_ALREADY_EXISTS` nếu đã tồn tại. |
-| EP3 | `customer_id` | Số nguyên dương, khách hàng phải tồn tại. | `404 CUSTOMER_NOT_FOUND`. |
-| EP4 | `customer_id`, `device_id`, `center_id` | Số nguyên dương; các bản ghi phải tồn tại; thiết bị phải thuộc khách hàng; trung tâm đúng phạm vi. | `400`, `403` hoặc `404` tùy nguyên nhân. |
-| EP4 | `issue_desc` | Bắt buộc; 10–2000 ký tự sau trim. | `400 VALIDATION_FAILED`. |
-| EP4 | `priority` | `CAO`, `TRUNG_BINH`, `THAP`; nếu bỏ trống dùng đề xuất hoặc mặc định `TRUNG_BINH`. | `400 VALIDATION_FAILED`. |
-| EP4 | `accessories` | Mảng các giá trị `SAC`, `TAI_NGHE`, `HOP`, `KHAC`, không trùng. | `400 VALIDATION_FAILED`. |
-| EP4 | `approved_by` | Nếu thiết bị hết hạn/thiếu ngày mua, phải là Quản lý trung tâm hợp lệ có quyền phê duyệt. | `422 WARRANTY_EXPIRED` nếu thiếu/sai phê duyệt. |
-| EP5 | `status` | Phải thuộc danh sách trạng thái được hỗ trợ. | `400 VALIDATION_FAILED`. |
-| EP5 | `overdue` | Boolean `true` hoặc `false`. | `400 VALIDATION_FAILED`. |
-| EP5 | `page`, `size` | `page ≥ 1`; `1 ≤ size ≤ 100`; mặc định `1` và `20`. | `400 VALIDATION_FAILED`. |
-| EP6 | `to_status` | Trạng thái hợp lệ và chuyển tiếp được phép từ trạng thái hiện tại. | `400` nếu mã không hợp lệ; `409 TICKET_STATE_INVALID` nếu chuyển tiếp sai. |
-
-## 1.11. Tự kiểm truy vết API
+## 1.10. Truy vết
 
 ### Bảng A – Endpoint → User Story → FR → Use Case
 
-| Endpoint | User Story | FR | Use Case | MoSCoW |
-|---|---|---|---|---|
-| EP1 – `GET /api/customers?phone=` | US1 | FR1 | UC1 | MUST |
-| EP2 – `POST /api/customers` | US3 | FR3 | UC3 | MUST |
-| EP3 – `GET /api/customers/{customer_id}/devices` | US1 | FR1 | UC1 | MUST |
-| EP4 – `POST /api/tickets` | US2, US4 | FR2, FR4 | UC2, UC4 | MUST cho US2; SHOULD cho phần đề xuất US4 |
-| EP5 – `GET /api/tickets` | US5, US7 | FR5, FR7 | UC5, UC7 | SHOULD |
-| EP6 – `PATCH /api/tickets/{ticket_id}/status` | US6 | FR6 | UC6 | COULD |
+| Endpoint | User Story | FR | Use Case | MoSCoW | Hiện thực |
+|---|---|---|---|---|---|
+| EP1 | US1 | FR1 | UC1 | MUST | Chưa làm |
+| EP2 | US3 | FR3 | UC3 | MUST | Chưa làm |
+| EP3 | US1 | FR1 | UC1 | MUST | Chưa làm |
+| EP4 | US2 (US4 một phần) | FR2 (FR4) | UC2 (UC4) | MUST (SHOULD) | Đã làm |
+| EP5, EP7 | US5 | FR5 | UC5 | SHOULD | Đã làm một phần |
+| EP6 | US6 | FR6 | UC6 | COULD | Đã làm |
+| (chưa có endpoint) | US7 | FR7 | UC7 | SHOULD | Chưa làm (cần `device_id` ở EP5) |
 
 ### Bảng B – Tiêu chí chấp nhận trọng yếu → endpoint → HTTP
 
-| User Story / trường hợp | Endpoint | HTTP dự kiến | Kết quả kiểm tra |
+| User Story / trường hợp | Endpoint | HTTP | Kết quả cần bảo đảm |
 |---|---|---|---|
-| US1: tra cứu số hợp lệ có khách hàng | EP1 | `200` | Trả hồ sơ khách hàng và số điện thoại đã che theo vai trò. |
-| US1: số điện thoại sai định dạng | EP1 | `400` | Không truy vấn bằng dữ liệu sai. |
-| US1: khách hàng chưa tồn tại | EP1 | `404` | Giao diện đề nghị tạo khách hàng mới. |
-| US3: tạo khách hàng mới | EP2 | `201` | Hồ sơ được tạo với số điện thoại chuẩn hóa. |
-| US3: số điện thoại vừa được tạo đồng thời | EP2 | `409` | Không tạo hồ sơ thứ hai; trả tham chiếu khách hàng hiện có. |
-| US2: tạo phiếu hợp lệ | EP4 | `201` | Mã phiếu duy nhất, trạng thái `MOI`, hạn cam kết và lịch sử ban đầu được lưu. |
-| UC2-7a: mô tả lỗi không hợp lệ | EP4 | `400` | Không ghi phiếu hoặc log. |
+| US2: tạo phiếu hợp lệ | EP4 | `201` | Mã phiếu duy nhất, trạng thái `MOI`, hạn cam kết, lịch sử ban đầu được lưu. |
+| UC2-7a: mô tả lỗi không hợp lệ | EP4 | `400` | Không ghi phiếu hay lịch sử. |
 | UC2-8a: hết bảo hành, thiếu phê duyệt | EP4 | `422` | Không tạo phiếu. |
-| UC2-8b: thiết bị có phiếu chưa đóng | EP4 | `409` | Không tạo phiếu; trả mã phiếu đang mở. |
-| UC2-9a: retry sau mất kết nối | EP4 | `201` hoặc kết quả đã lưu | Cùng `Idempotency-Key` không tạo phiếu trùng. |
-| US5: xem danh sách lọc theo trạng thái | EP5 | `200` | Sắp xếp `due_date` tăng dần, có phân trang. |
-| US7: thiết bị có từ ba phiếu cùng nhóm sự cố | EP5 với `device_id` | `200` | Hiển thị `repeat_warning: true`. |
+| UC2-8b: thiết bị có phiếu chưa đóng | EP4 | `409` | Không tạo phiếu trùng. |
+| UC2-9a: gửi lại sau mất kết nối | EP4 | `200` | Cùng `Idempotency-Key` không tạo phiếu thứ hai. |
+| US5: danh sách lọc theo trạng thái | EP5 | `200` | Sắp xếp `due_date` tăng dần, có phân trang, số điện thoại được che. |
 | US6: chuyển trạng thái hợp lệ | EP6 | `200` | Cập nhật trạng thái và ghi lịch sử. |
-| US6: chuyển trạng thái ngược/sai vòng đời | EP6 | `409` | Không thay đổi trạng thái hoặc lịch sử. |
+| US6: chuyển lùi hoặc sai vòng đời | EP6 | `422` | Không đổi trạng thái hay lịch sử. |
+| Sai vai trò | EP4, EP6 | `403` | Không thực hiện thao tác. |
 
-**Kết quả tự kiểm hợp đồng:** 6/6 endpoint được ánh xạ tới ít nhất một User Story; US1–US3 có endpoint phục vụ các chức năng MUST. US4 được thực hiện như bước đề xuất trong luồng tạo phiếu; US5–US7 có endpoint dự kiến cho các story SHOULD/COULD. Các phản hồi ví dụ và mã HTTP là hợp đồng thiết kế, cần kiểm thử tích hợp và đối chiếu với DDL/mã nguồn ở BT2–BT3 trước khi xem là kết quả triển khai.
+## 1.11. Thay đổi so với v1.0 (BT1)
+
+| Nội dung | v1.0 (BT1) | v1.1 (Sprint 1) | Lý do |
+|---|---|---|---|
+| Tên vai trò | `RECEPTIONIST`, `CENTER_MANAGER`, `TECHNICIAN` | `NHAN_VIEN_TIEP_NHAN`, `QUAN_LY_TRUNG_TAM`, `KY_THUAT_VIEN` | Thống nhất với bảng `employee` và thuật ngữ SRS. |
+| Mã lỗi | Tiếng Anh (`VALIDATION_FAILED`, `DEVICE_HAS_OPEN_TICKET`, `WARRANTY_EXPIRED`, ...) | Tiếng Việt không dấu (xem mục 1.2) | Thống nhất với ví dụ của buổi 8 và mã nguồn. |
+| Định dạng lỗi | `{"error":{"code","message","fields"}}` | `{"error","message","details"}` | Khớp mã nguồn. |
+| Định dạng thành công | Đối tượng phẳng, danh sách có khóa `items` | Bọc trong `data`; danh sách kèm `paging` | Khớp mã nguồn. |
+| Trạng thái | Có `DA_TIEP_NHAN` | Bỏ `DA_TIEP_NHAN`; dùng đúng 7 trạng thái của DDL | `MOI` là trạng thái đầu; tránh lệch với CHECK trong DDL. |
+| `center_id` | Trong body của EP4 | Lấy từ người thao tác | Tránh client khai sai trung tâm. |
+| Chuyển trạng thái sai | `409 TICKET_STATE_INVALID` | `422 CHUYEN_TRANG_THAI_KHONG_HOP_LE`; `409 XUNG_DOT_TRANG_THAI` cho xung đột đồng thời | Phân biệt lỗi nghiệp vụ và xung đột. |
+| Thiết bị/khách không hợp lệ khi tạo phiếu | `404` (không tồn tại) và `400` (thiết bị không thuộc khách) | `422 THIET_BI_KHONG_THUOC_KHACH_HANG` | Một kiểm tra duy nhất cho cặp khách hàng và thiết bị. |
+| Phản hồi EP6 | `from_status`, `to_status`, `changed_at`, `changed_by` | Toàn bộ phiếu sau cập nhật; lịch sử lưu ở `ticket_status_log` | Khớp mã nguồn. |
+| Xác thực | Bearer token | Bearer là đích; Sprint 1 dùng header tạm | Chưa có đăng nhập, dành cho BT2. |
+| EP7 | Chưa có | Thêm `GET /api/tickets/{ticket_id}` | Cần xem chi tiết một phiếu. |
+| Ghi chú trao đổi (US8) | Có `POST` và `GET /api/tickets/{id}/notes` | Bỏ khỏi hợp đồng | TD-01: US8, FR8, UC8 và bảng `ticket_note` chuyển sang phạm vi sau. |
+| Quyền tạo phiếu (EP4) | Nhân viên tiếp nhận và Quản lý trung tâm | Chỉ Nhân viên tiếp nhận | Khớp SRS mục 2: Quản lý trung tâm không tạo phiếu. |
+| Múi giờ | `+07:00` | UTC (hậu tố `Z`) | Máy chủ trả cùng một thời điểm theo UTC; giao diện đổi sang giờ Việt Nam khi hiển thị. |
+| EP1–EP3, lọc `assignee_id`/`overdue`/`device_id`, đề xuất phân loại | Đã thiết kế | Giữ nguyên thiết kế, đánh dấu Chưa làm | Chưa hiện thực trong Sprint 1. |
