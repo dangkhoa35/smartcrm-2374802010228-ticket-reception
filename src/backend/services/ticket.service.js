@@ -1,5 +1,5 @@
 const AppError = require('../utils/AppError');
-const { maskPhone } = require('../utils/phone');
+const { toTicketView } = require('../contracts/ticket.contract');
 const { computeDueDate } = require('../utils/dueDate');
 const ticketRepo = require('../repositories/ticket.repository');
 const deviceRepo = require('../repositories/device.repository');
@@ -24,44 +24,12 @@ function isUnderWarranty(device, receivedAt) {
   return receivedAt <= end;
 }
 
-// Entity (hàng trong DB) -> DTO trả cho lớp API. Che số điện thoại theo NFR2.
-function toDto(r, actor) {
-  const dto = {
-    ticket_id: r.ticket_id,
-    ticket_code: r.ticket_code,
-    customer_id: r.customer_id,
-    device_id: r.device_id,
-    category_id: r.category_id,
-    center_id: r.center_id,
-    issue_desc: r.issue_desc,
-    priority: r.priority,
-    status: r.status,
-    received_at: r.received_at,
-    due_date: r.due_date,
-    closed_at: r.closed_at,
-    is_warranty: r.is_warranty,
-    technician_id: r.technician_id,
-    accessories: [
-      r.acc_sac && 'SAC', r.acc_tai_nghe && 'TAI_NGHE', r.acc_hop && 'HOP', r.acc_khac && 'KHAC',
-    ].filter(Boolean),
-  };
-  if (r.customer_name !== undefined) { // có khi lấy từ truy vấn nối
-    dto.customer_name = r.customer_name;
-    dto.customer_phone =
-      actor.role === 'QUAN_LY_TRUNG_TAM' ? r.customer_phone : maskPhone(r.customer_phone);
-    dto.product_name = r.product_name;
-    dto.serial_no = r.serial_no;
-    dto.category_name = r.category_name;
-  }
-  return dto;
-}
-
 // UC2 – Tạo Phiếu bảo hành mới. `input` đã được lớp API kiểm kiểu dữ liệu.
 async function createTicket(input, actor, idempotencyKey) {
   // NFR3: gửi lại cùng Idempotency-Key thì trả lại phiếu cũ, không tạo phiếu thứ hai
   if (idempotencyKey) {
     const existing = await ticketRepo.findByIdempotencyKey(idempotencyKey);
-    if (existing) return { ticket: toDto(existing, actor), created: false };
+    if (existing) return { ticket: toTicketView(existing, actor), created: false };
   }
 
   const device = await deviceRepo.findById(input.device_id);
@@ -119,7 +87,7 @@ async function createTicket(input, actor, idempotencyKey) {
       },
       idempotencyKey: idempotencyKey || null,
     }, actor.employeeId);
-    return { ticket: toDto(row, actor), created: true };
+    return { ticket: toTicketView(row, actor), created: true };
   } catch (e) {
     // Hai yêu cầu đồng thời: CSDL chặn bằng UNIQUE, quy về cùng mã lỗi nghiệp vụ
     if (e.code === '23505' && e.constraint === 'uq_ticket_open_per_device') {
@@ -127,7 +95,7 @@ async function createTicket(input, actor, idempotencyKey) {
     }
     if (e.code === '23505' && e.constraint === 'ticket_idempotency_key_key') {
       const existing = await ticketRepo.findByIdempotencyKey(idempotencyKey);
-      return { ticket: toDto(existing, actor), created: false };
+      return { ticket: toTicketView(existing, actor), created: false };
     }
     throw e;
   }
@@ -137,7 +105,7 @@ async function createTicket(input, actor, idempotencyKey) {
 async function listTickets({ status, page, size }, actor) {
   const { rows, total } = await ticketRepo.list({ centerId: actor.centerId, status, page, size });
   return {
-    data: rows.map((r) => toDto(r, actor)),
+    data: rows.map((r) => toTicketView(r, actor)),
     paging: { page, size, total, total_pages: Math.ceil(total / size) },
   };
 }
@@ -145,7 +113,7 @@ async function listTickets({ status, page, size }, actor) {
 async function getTicket(ticketId, actor) {
   const row = await ticketRepo.findById(ticketId, actor.centerId);
   if (!row) throw new AppError(404, 'KHONG_TIM_THAY', 'Không tìm thấy phiếu bảo hành');
-  return toDto(row, actor);
+  return toTicketView(row, actor);
 }
 
 // UC6 – Chuyển trạng thái đúng vòng đời, ghi lịch sử (QT03)
