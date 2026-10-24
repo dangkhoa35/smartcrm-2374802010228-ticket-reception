@@ -31,7 +31,7 @@ export default function ReceiveDevicePage() {
       <p><Link to="/tickets">◀ Về danh sách phiếu bảo hành</Link></p>
       <h1>Tạo phiếu bảo hành mới</h1>
       <CustomerStep customer={customer} onCustomer={setCustomer} />
-      {customer && <TicketStep key={customer.customer_id} customer={customer} centerId={session.centerId} />}
+      {customer && <TicketStep key={customer.customer_id} customer={customer} centerId={session.centerId} onChangeCustomer={() => setCustomer(null)} />}
     </section>
   );
 }
@@ -135,7 +135,7 @@ function newKey() {
 }
 const PRIORITIES = ['CAO', 'TRUNG_BINH', 'THAP'];
 
-function TicketStep({ customer, centerId }) {
+function TicketStep({ customer, centerId, onChangeCustomer }) {
   const navigate = useNavigate();
   const devices = useApi(() => customersApi.devices(customer.customer_id), [customer.customer_id]);
   const categories = useApi(() => categoriesApi.list(), []);
@@ -182,6 +182,7 @@ function TicketStep({ customer, centerId }) {
     }
   }
 
+  const noDevices = !devices.loading && !devices.error && (devices.result ?? []).length === 0;
   const fe = err?.fields ?? {}; // lỗi theo trường từ API
   const catList = categories.result ?? [];
   const chosenCat = catList.find((c) => String(c.category_id) === categoryId);
@@ -190,7 +191,10 @@ function TicketStep({ customer, centerId }) {
     <form onSubmit={submit} className="card form">
       <h2>Thiết bị</h2>
       <DataState loading={devices.loading} error={devices.error} data={devices.result} onRetry={devices.reload}
-        empty={{ message: 'Khách hàng này chưa có thiết bị nào trong hệ thống nên chưa thể tạo phiếu.' }}>
+        empty={{
+          message: 'Khách hàng này chưa có thiết bị nào trong hệ thống nên chưa thể tạo phiếu. Hãy chọn khách hàng khác hoặc nhờ quản trị viên thêm thiết bị.',
+          action: <button type="button" onClick={onChangeCustomer}>Chọn khách hàng khác</button>,
+        }}>
         {(list) => {
           const dev = list.find((d) => String(d.device_id) === deviceId);
           const hint = dev ? warrantyHint(dev) : null;
@@ -220,6 +224,7 @@ function TicketStep({ customer, centerId }) {
         }}
       </DataState>
 
+      {!noDevices && <>
       <h2>Tình trạng và phân loại</h2>
       <label>Mô tả lỗi (10–2000 ký tự)
         <textarea rows={4} value={desc} onChange={(e) => setDesc(e.target.value)}
@@ -275,10 +280,11 @@ function TicketStep({ customer, centerId }) {
 
       <div className="actions">
         <Link to="/tickets" className="button">Hủy</Link>
-        <button type="submit" className="primary" disabled={busy || devices.loading}>
+        <button type="submit" className="primary" disabled={busy || devices.loading || !!devices.error}>
           {busy ? 'Đang lưu…' : 'Lưu phiếu bảo hành'}
         </button>
       </div>
+      </>}
     </form>
   );
 }

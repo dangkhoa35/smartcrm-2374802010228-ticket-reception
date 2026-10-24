@@ -20,7 +20,9 @@ export function Layout() {
           <button type="button" onClick={() => { logout(); navigate('/login'); }}>Đổi người dùng</button>
         </div>
       </header>
-      <main className="container"><Outlet /></main>
+      {/* key: đổi vai trò / nhân viên / trung tâm thì dựng lại trang để tải dữ liệu mới.
+          Nếu không, trang giữ dữ liệu của vai trò trước (ví dụ số điện thoại chưa che, NFR2). */}
+      <main className="container" key={`${session.role}-${session.employeeId}-${session.centerId}`}><Outlet /></main>
     </>
   );
 }
