@@ -1,6 +1,7 @@
 const router = require('express').Router();
 
 router.use('/tickets', require('./ticket.routes'));
-// Entity thứ hai (customer) sẽ thêm ở phần tự học: router.use('/customers', require('./customer.routes'));
+router.use('/customers', require('./customer.routes'));
+router.use('/issue-categories', require('./issueCategory.routes'));
 
 module.exports = router;

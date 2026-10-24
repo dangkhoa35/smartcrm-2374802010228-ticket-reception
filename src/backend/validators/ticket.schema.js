@@ -5,7 +5,7 @@
 // Lỗi -> AppError 400 DU_LIEU_KHONG_HOP_LE kèm `fields` { ten_truong: thông báo }.
 // ============================================================================
 const { z } = require('zod');
-const AppError = require('../utils/AppError');
+const { parseOrThrow } = require('./parse');
 
 const PRIORITIES = ['CAO', 'TRUNG_BINH', 'THAP'];
 const STATUSES = ['MOI', 'DA_PHAN_CONG', 'DANG_XU_LY', 'CHO_LINH_KIEN', 'HOAN_TAT', 'DA_DONG', 'DA_HUY'];
@@ -51,18 +51,6 @@ const idParamSchema = z.object({
   id: z.coerce.number({ invalid_type_error: 'Mã phiếu phải là số nguyên dương' })
     .int('Mã phiếu phải là số nguyên dương').positive('Mã phiếu phải là số nguyên dương'),
 });
-
-// Chạy schema; sai thì ném AppError 400 kèm `fields` (lỗi đầu tiên của mỗi trường).
-function parseOrThrow(schema, data) {
-  const result = schema.safeParse(data ?? {});
-  if (result.success) return result.data;
-  const fields = {};
-  for (const issue of result.error.issues) {
-    const key = issue.path.join('.') || '_';
-    if (!(key in fields)) fields[key] = issue.message;
-  }
-  throw new AppError(400, 'DU_LIEU_KHONG_HOP_LE', 'Dữ liệu gửi lên không hợp lệ', fields);
-}
 
 module.exports = {
   createTicketSchema, listQuerySchema, changeStatusSchema, idParamSchema, parseOrThrow,

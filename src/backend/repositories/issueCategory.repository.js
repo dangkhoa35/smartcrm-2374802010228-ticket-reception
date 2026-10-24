@@ -8,4 +8,11 @@ async function findById(categoryId) {
   return rows[0] || null;
 }
 
-module.exports = { findById };
+// Danh mục cho ô chọn "Nhóm sự cố" trên giao diện.
+async function listActive() {
+  const { rows } = await pool.query(
+    'SELECT category_id, category_name, default_priority FROM issue_category WHERE is_active = TRUE ORDER BY category_id');
+  return rows;
+}
+
+module.exports = { findById, listActive };

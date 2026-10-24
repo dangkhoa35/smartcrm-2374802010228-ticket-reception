@@ -182,9 +182,9 @@ smartcrm-2374802010228-ticket-reception/
 - [x] Nạp dữ liệu thử từ bộ mẫu: 6.443 khách, 7.800 thiết bị, 7.800 phiếu, 38.112 dòng lịch sử
 - [x] `POST /api/tickets`, `GET /api/tickets` (lọc `status`, phân trang), `GET /api/tickets/{id}`, `PATCH /api/tickets/{id}/status` qua routes → services → repositories
 - [x] Quy tắc QT01, QT02, QT03, che số điện thoại, `Idempotency-Key`; ghi `ticket` và `ticket_status_log` trong một giao dịch
-- [x] 15 unit test cho lớp nghiệp vụ (`npm test`)
+- [x] 37 unit test cho lớp nghiệp vụ (`npm test`)
 - [ ] Đăng nhập thật (hiện dùng header `x-role` tạm thời) – dự kiến BT2
-- [ ] Entity thứ hai: tra cứu và tạo khách hàng (EP1–EP3)
+- [x] Entity thứ hai: tra cứu và tạo khách hàng (EP1–EP3)
 - [ ] Đề xuất nhóm sự cố từ mô tả (US4); lọc `overdue`/`assignee_id`; lịch sử thiết bị và cảnh báo lỗi lặp lại (US7)
 - [ ] Giao diện React (`src/frontend/`)
 
@@ -220,7 +220,7 @@ smartcrm-2374802010228-ticket-reception/
 | **Claude** | Mục 5 (Wireframe) | Nhờ vẽ 3 màn hình và đối chiếu trường với ERD | Tôi đã kiểm chứng với file gốc, tài liệu lý thuyết buổi 5 và tài liệu tự học buổi 5. Sửa các phần không đúng với yêu cầu. |
 | **Claude** | Sprint 1 – migration, seed, nạp dữ liệu (`src/backend/db/`) | Gửi slide buổi 8, BT1 và bộ dữ liệu mẫu, nhờ hướng dẫn chặng 2–3 và soạn mã nền | Em tự chạy `migrate`, `seed`, `import:history` trên PostgreSQL cài trực tiếp; đối chiếu số dòng với CSV (6 / 6 / 38 / 60 và 6.443 / 7.800 / 7.800 / 38.112); đối chiếu DDL với BT1, bỏ bảng `ticket_note` theo TD-01; chạy lại nhiều lần không bị nhân đôi dữ liệu. |
 | **Claude** | Sprint 1 – API phiếu bảo hành (`routes`, `services`, `repositories`, `middlewares`, `utils`) | Nhờ soạn mã 3 lớp theo thiết kế kiến trúc và quy tắc QT01–QT03 | Em đọc từng lớp để hiểu trách nhiệm; gọi API bằng curl/Postman, chụp ảnh lưu trong `docs/screenshots/`; đối chiếu các quy tắc với SRS. |
-| **Claude** | Sprint 1 – unit test (`tests/`) | Nhờ viết test cho QT01, QT02, QT03 và che số điện thoại | Em chạy `npm test` (15 test đạt) và đọc từng trường hợp thử. |
+| **Claude** | Sprint 1 – unit test (`tests/`) | Nhờ viết test cho QT01, QT02, QT03 và che số điện thoại | Em chạy `npm test` (37 test đạt) và đọc từng trường hợp thử. |
 | **Claude** | Tài liệu: `README.md`, `api-contract.md` v1.1 | Gửi bản cũ, nhờ đồng bộ với mã nguồn Sprint 1 | Em đối chiếu từng endpoint, mã lỗi và ví dụ với kết quả gọi API thực tế. |
 | **Antigravity** | Rà soát repo trước khi push | Gửi prompt kiểm tra checklist buổi 8 (chỉ đọc, không sửa) | Em tự đọc từng mục FAIL/WARN, quyết định sửa; bỏ qua cảnh báo không áp dụng (ví dụ tệp PDF BT1 là bài nộp). |
 
