@@ -139,12 +139,14 @@ smartcrm-2374802010228-ticket-reception/
    cd smartcrm-2374802010228-ticket-reception
    ```
 
-2. **Cài thư viện** (backend ở thư mục gốc, frontend ở `src/frontend`):
+2. **Cài thư viện backend** (thư mục gốc):
    ```bash
    npm install
-   cd src/frontend
-   npm install
-   cd ../..
+   ```
+
+   **Cài thư viện frontend:**
+   ```bash
+   npm install --prefix src/frontend
    ```
 
 3. **Tạo user và database trong PostgreSQL** (mở `psql` bằng tài khoản `postgres`):
@@ -157,6 +159,7 @@ smartcrm-2374802010228-ticket-reception/
    ```powershell
    Copy-Item .env.example .env
    ```
+   Trên macOS/Linux/Git Bash: `cp .env.example .env`.
    ```env
    PORT=3000
    DATABASE_URL=postgresql://smartcrm:mat-khau-cua-ban@localhost:5432/smartcrm
@@ -166,6 +169,7 @@ smartcrm-2374802010228-ticket-reception/
    ```powershell
    Copy-Item src/frontend/.env.example src/frontend/.env
    ```
+   Trên macOS/Linux/Git Bash: `cp src/frontend/.env.example src/frontend/.env`.
    ```env
    VITE_API_BASE_URL=http://localhost:3000
    ```
@@ -222,7 +226,7 @@ smartcrm-2374802010228-ticket-reception/
 
 ---
 
-## 6. Trạng thái hiện tại (buổi 9 – Sprint 2)
+## 6. Trạng thái hiện tại (buổi 10 – Sprint 2)
 
 - [x] Migration `001`–`002`: 8 bảng theo DDL BT1 (đã bỏ `ticket_note` theo TD-01, thêm 3 bảng danh mục theo TD-07)
 - [x] Seed danh mục: 6 trung tâm, 6 nhóm sự cố, 38 kỹ thuật viên, 60 mã nhân viên
@@ -230,13 +234,13 @@ smartcrm-2374802010228-ticket-reception/
 - [x] `POST /api/tickets`, `GET /api/tickets` (lọc `status`, phân trang), `GET /api/tickets/{id}`, `PATCH /api/tickets/{id}/status` qua routes → services → repositories
 - [x] Quy tắc QT01, QT02, QT03, che số điện thoại, `Idempotency-Key`; ghi `ticket` và `ticket_status_log` trong một giao dịch
 - [x] Entity thứ hai: tra cứu và tạo khách hàng, thiết bị của khách, danh mục nhóm sự cố (EP1–EP3, EP8)
+- [x] Buổi 10: danh sách mặc định "Đang mở" (`open=true`, EP5); thêm thiết bị cho khách (EP9); kiểm tra mã Quản lý phê duyệt (`422 NGUOI_PHE_DUYET_KHONG_HOP_LE`); phân công kỹ thuật viên khi chuyển `DA_PHAN_CONG` (EP6 + EP10), hiện tên kỹ thuật viên; ngày hiển thị năm 4 chữ số (xem `api-contract.md` v1.3 và TD-09)
 - [x] Hợp đồng dữ liệu ở ranh giới: `contracts/` (hàm chuyển đổi), `validators/` (zod), một định dạng lỗi `error` / `message` / `fields`, lỗi 500 kèm mã tra cứu
 - [x] Giao diện React: 4 màn hình gọi API thật, ba trạng thái đang tải / rỗng / lỗi, không gọi `fetch` ngoài `src/frontend/src/api/`
-- [x] 37 unit test backend (`npm test` ở thư mục gốc) và 20 test giao diện (`npm test` trong `src/frontend`)
-- [ ] Đăng nhập thật (hiện chọn vai trò, xem mục 6.1) – dự kiến BT2
-- [ ] Đề xuất nhóm sự cố từ mô tả (US4); lọc `overdue`/`assignee_id`; lịch sử thiết bị và cảnh báo lỗi lặp lại (US7)
-- [ ] Lịch sử trạng thái phiếu trên màn chi tiết; thêm thiết bị mới cho khách chưa có thiết bị
-- [ ] Kiểm tra mã Quản lý phê duyệt (`approved_by`) có tồn tại và đúng vai trò
+- [x] 48 unit test backend (`npm test` ở thư mục gốc) và 36 test giao diện (`npm test` trong `src/frontend`), gồm luồng đúng, giá trị biên, dữ liệu sai và luồng lỗi 409/422
+- [ ] Đăng nhập thật (hiện chọn vai trò, xem mục 6.1) – dự kiến BT2 (TD-12)
+- [ ] Đề xuất nhóm sự cố từ mô tả (US4) – hoãn (TD-10)
+- [ ] Lọc `overdue`/`assignee_id`/serial; lịch sử trạng thái trên màn chi tiết; lịch sử thiết bị và cảnh báo lỗi lặp lại (US7) – hoãn (TD-11)
 
 ### 6.1. Xác thực tạm thời và hạn chế đã biết
 
@@ -250,9 +254,9 @@ smartcrm-2374802010228-ticket-reception/
 
 | Màn hình | Câu hỏi mà màn hình trả lời | Ngữ cảnh so sánh | API |
 |---|---|---|---|
-| Danh sách phiếu `/tickets` | "Hôm nay tôi phải xử lý phiếu nào trước?" | Sắp theo hạn cam kết tăng dần, tô đỏ phiếu quá hạn, đếm số phiếu quá hạn của trang và tổng số phiếu | EP5 |
-| Tạo phiếu `/tickets/new` | "Thiết bị này tiếp nhận được chưa, hạn bảo hành thế nào?" | Ngày mua, số tháng bảo hành và tình trạng bảo hành hiện ngay khi chọn thiết bị | EP1, EP2, EP3, EP8, EP4 |
-| Chi tiết phiếu `/tickets/:id` | "Phiếu này đang ở đâu, còn bao lâu đến hạn?" | Hạn cam kết kèm "Quá hạn N ngày" hoặc "Còn N giờ" | EP7, EP6 |
+| Danh sách phiếu `/tickets` | "Hôm nay tôi phải xử lý phiếu nào trước?" | Mặc định "Đang mở" (ẩn phiếu đã đóng/hủy), sắp theo hạn cam kết tăng dần, tô đỏ phiếu quá hạn, đếm số phiếu quá hạn của trang và tổng số phiếu | EP5 |
+| Tạo phiếu `/tickets/new` | "Thiết bị này tiếp nhận được chưa, hạn bảo hành thế nào?" | Ngày mua, số tháng bảo hành và tình trạng bảo hành hiện ngay khi chọn thiết bị; khách chưa có thiết bị thì thêm ngay tại màn này | EP1, EP2, EP3, EP9, EP8, EP4 |
+| Chi tiết phiếu `/tickets/:id` | "Phiếu này đang ở đâu, ai phụ trách, còn bao lâu đến hạn?" | Hạn cam kết kèm "Quá hạn N ngày" hoặc "Còn N giờ"; tên kỹ thuật viên; chọn kỹ thuật viên khi phân công | EP7, EP6, EP10 |
 | Đăng nhập `/login` | Chọn vai trò làm việc | Không áp dụng | Không gọi API |
 
 Cả ba màn hình có dữ liệu đều xử lý đủ: đang tải (khung chờ), rỗng (lời giải thích kèm hành động, ví dụ nút Xóa bộ lọc), lỗi (câu giải thích kèm nút Thử lại khi lỗi tạm thời).
@@ -292,7 +296,7 @@ Cả ba màn hình có dữ liệu đều xử lý đủ: đang tải (khung ch�
 | **Claude** | Sprint 1 – unit test (`tests/`) | Nhờ viết test cho QT01, QT02, QT03 và che số điện thoại | Em chạy `npm test` và đọc từng trường hợp thử. |
 | **Claude** | Sprint 2 (buổi 9) – hợp đồng ở ranh giới backend (`contracts/`, `validators/`, `errorHandler.js`, CORS) | Gửi slide và tài liệu tự học buổi 9, nhờ đối chiếu mã Sprint 1 với yêu cầu và soạn mã hàm chuyển đổi, schema zod, định dạng lỗi `fields` | Em chép mã vào dự án, chạy `npm test` (37 test đạt), gọi API bằng `curl.exe` để thấy lỗi 400 có `fields` theo từng trường; đổi định dạng lỗi `details` thành `fields` và ghi vào `thay-doi-thiet-ke.md`. |
 | **Claude** | Sprint 2 – EP1–EP3, EP8 (`customer`, `issueCategory`) | Nhờ soạn mã ba lớp, test và ví dụ cho tra cứu và tạo khách hàng, thiết bị của khách, danh mục nhóm sự cố | Em chạy `npm test` và gọi từng endpoint bằng `curl.exe` với số điện thoại thật trong dữ liệu; đối chiếu mã lỗi 404, 409, 400 với `api-contract.md`. |
-| **Claude** | Sprint 2 – giao diện React (`src/frontend/`) | Nhờ soạn cấu trúc thành phần, lớp gọi API, thành phần ba trạng thái và bốn màn hình theo wireframe | Em chạy `npm run dev` cùng backend và thử từng màn hình trên trình duyệt, gồm: tắt backend để thấy lỗi có nút Thử lại, lọc ra rỗng, nhập sai để thấy lỗi cạnh ô; chạy `npm test` giao diện (20 test đạt); chụp ảnh lưu trong `docs/screenshots/`. **[CẦN XÁC NHẬN: chỉ giữ câu này khi đã thật sự làm đủ các việc nêu trên]** |
+| **Claude** | Sprint 2 – giao diện React (`src/frontend/`) | Nhờ soạn cấu trúc thành phần, lớp gọi API, thành phần ba trạng thái và bốn màn hình theo wireframe | Em chạy `npm run dev` cùng backend và thử từng màn hình trên trình duyệt, gồm: tắt backend để thấy lỗi có nút Thử lại, lọc ra rỗng, nhập sai để thấy lỗi cạnh ô; chạy `npm test` giao diện (36 test đạt); chụp ảnh lưu trong `docs/screenshots/`.|
 | **Claude** | Tài liệu: `README.md`, `api-contract.md` v1.1, v1.2 | Gửi bản cũ, nhờ đồng bộ với mã nguồn Sprint 1 và Sprint 2 | Em đối chiếu từng endpoint, mã lỗi và ví dụ với kết quả gọi API thực tế. |
 | **Antigravity** | Rà soát repo trước khi push | Gửi prompt kiểm tra checklist buổi 8 (chỉ đọc, không sửa) | Em tự đọc từng mục FAIL/WARN, quyết định sửa; bỏ qua cảnh báo không áp dụng (ví dụ tệp PDF BT1 là bài nộp). |
 

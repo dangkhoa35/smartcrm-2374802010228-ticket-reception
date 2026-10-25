@@ -1,7 +1,7 @@
 # API CONTRACT – SMART CRM MEKONG MOBILE
 
 **Luồng nghiệp vụ:** L2 – Tiếp nhận và phân loại yêu cầu bảo hành  
-**Phiên bản:** 1.2 (24/10/2026) – Sprint 2 (buổi 9): thêm EP1–EP3 và EP8, đổi định dạng lỗi `details` → `fields` (TD-08); kế thừa v1.1 (20/10/2026) và v1.0 của BT1 (xem mục 1.11, 1.12 và README mục 6, QĐ-4)  
+**Phiên bản:** 1.3 – Sprint 2 (buổi 10): thêm EP9, EP10, tham số `open` của EP5, `technician_id` của EP6, 3 mã lỗi mới (TD-09, mục 1.13); kế thừa v1.2 (24/10/2026: EP1–EP3, EP8, định dạng lỗi `fields`, TD-08), v1.1 (20/10/2026) và v1.0 của BT1 (xem mục 1.11, 1.12 và README mục 6, QĐ-4)  
 **Phạm vi:** US1–US7; không đặc tả US8 (Ghi chú trao đổi) theo TD-01.  
 **Cột "Hiện thực":** `Đã làm` = đã hiện thực trong Sprint 1–2; `Chưa làm` = đã thiết kế, chưa hiện thực.
 
@@ -44,6 +44,10 @@
 | `XUNG_DOT_TRANG_THAI` | 409 | Trạng thái phiếu vừa bị người khác thay đổi trong lúc xử lý. |
 | `LOI_HE_THONG` | 500 | Lỗi không lường trước; giao dịch được rollback. `message` là câu chung kèm mã tra cứu (ghi log cùng mã), client không nhận chi tiết kỹ thuật. |
 | `SDT_DA_TON_TAI` | 409 | (EP2) Số điện thoại đã có hồ sơ khách hàng, kể cả khi hai yêu cầu cùng số được gửi đồng thời. |
+| `SERIAL_DA_TON_TAI` | 409 | (EP9) Số serial đã được đăng ký cho một thiết bị khác; kèm `fields.serial_no`. |
+| `NGUOI_PHE_DUYET_KHONG_HOP_LE` | 422 | (EP4) `approved_by` không tồn tại, không phải Quản lý trung tâm hoặc thuộc trung tâm khác (SRS 8a). |
+| `CAN_CHON_KY_THUAT_VIEN` | 422 | (EP6) Chuyển sang `DA_PHAN_CONG` mà không gửi `technician_id`; kèm `fields.technician_id`. |
+| `KY_THUAT_VIEN_KHONG_HOP_LE` | 422 | (EP6) `technician_id` không tồn tại, ngừng hoạt động hoặc thuộc trung tâm khác; kèm `fields.technician_id`. |
 
 ## 1.3. Danh sách endpoint
 
@@ -57,6 +61,8 @@
 | EP6 | `PATCH` | `/api/tickets/{ticket_id}/status` | Chuyển trạng thái và ghi lịch sử | Kỹ thuật viên | US6 – COULD | Đã làm |
 | EP7 | `GET` | `/api/tickets/{ticket_id}` | Chi tiết một phiếu | Mọi vai trò, trong trung tâm của mình | US5 – SHOULD | Đã làm |
 | EP8 | `GET` | `/api/issue-categories` | Danh mục nhóm sự cố cho ô chọn trên giao diện | Mọi vai trò hợp lệ | Hỗ trợ US2 / US4 | Đã làm |
+| EP9 | `POST` | `/api/customers/{customer_id}/devices` | Thêm thiết bị cho khách hàng (khách mới chưa có thiết bị vẫn tạo được phiếu) | Nhân viên tiếp nhận | Hỗ trợ US2 | Đã làm (buổi 10) |
+| EP10 | `GET` | `/api/technicians` | Kỹ thuật viên đang hoạt động của trung tâm, để chọn khi phân công | Kỹ thuật viên, Quản lý trung tâm | Hỗ trợ US6 | Đã làm (buổi 10) |
 
 **Truy vết tổng quát:** US1 → FR1 → UC1; US2 → FR2 → UC2; US3 → FR3 → UC3; US4 → FR4 → UC4; US5 → FR5 → UC5; US6 → FR6 → UC6; US7 → FR7 → UC7.
 
@@ -193,7 +199,7 @@ Chưa hiện thực trong Sprint 1: client gửi `category_id`; máy chủ chỉ
 | Thuộc tính | Nội dung |
 |---|---|
 | **Mục đích** | Danh sách phiếu của trung tâm người gọi, sắp xếp `due_date` tăng dần (phiếu gần hạn nhất trước). |
-| **Query đã hiện thực** | `status` (một trong 7 trạng thái), `page`, `size`. |
+| **Query đã hiện thực** | `status` (một trong 7 trạng thái), `open` (`true`: loại phiếu `DA_DONG`, `DA_HUY`; kết hợp với `status` theo AND), `page`, `size`. Giao diện mặc định gửi `open=true` ("Đang mở"). |
 | **Query chưa hiện thực** | `assignee_id`, `overdue`, `device_id` (lịch sử thiết bị và cảnh báo lỗi lặp lại – US7/FR7). |
 | **Quyền** | Mọi vai trò hợp lệ, trong phạm vi trung tâm của mình. |
 | **Hiệu năng** | Lọc, sắp xếp và phân trang thực hiện trong SQL, dùng index `idx_ticket_center_status_due` (NFR1: 95% yêu cầu dưới 2 giây với 10.000 phiếu). |
@@ -201,7 +207,7 @@ Chưa hiện thực trong Sprint 1: client gửi `category_id`; máy chủ chỉ
 ### Request mẫu
 
 ```http
-GET /api/tickets?status=MOI&page=1&size=20 HTTP/1.1
+GET /api/tickets?open=true&page=1&size=20 HTTP/1.1
 x-role: QUAN_LY_TRUNG_TAM
 x-center-id: 1
 ```
@@ -243,7 +249,7 @@ x-center-id: 1
 | Mã | Khi nào | `error` |
 |---|---|---|
 | `200` | Thành công, kể cả khi không có phiếu khớp (`data: []`, `total: 0`). | — |
-| `400` | `status` không thuộc danh sách; `page` < 1; `size` ngoài 1–100. | `DU_LIEU_KHONG_HOP_LE` |
+| `400` | `status` không thuộc danh sách; `open` khác `true`/`false`; `page` < 1; `size` ngoài 1–100. | `DU_LIEU_KHONG_HOP_LE` |
 | `401` | Vai trò không hợp lệ. | `CHUA_XAC_THUC` |
 
 ## 1.6. EP7 – GET `/api/tickets/{ticket_id}` (US5) – Đã làm
@@ -262,7 +268,7 @@ Trả chi tiết một phiếu, cùng các trường nối như một phần t�
 | Thuộc tính | Nội dung |
 |---|---|
 | **Mục đích** | Chuyển trạng thái phiếu theo vòng đời và ghi một dòng vào `ticket_status_log` (trạng thái cũ, mới, thời điểm, người thực hiện, ghi chú) trong cùng giao dịch. |
-| **Body** | `to_status` bắt buộc (một trong 7 trạng thái); `note` tùy chọn, chuỗi tối đa 255 ký tự. |
+| **Body** | `to_status` bắt buộc (một trong 7 trạng thái); `note` tùy chọn, chuỗi tối đa 255 ký tự; `technician_id` **bắt buộc khi `to_status` = `DA_PHAN_CONG`** (kỹ thuật viên đang hoạt động, cùng trung tâm; lấy danh sách từ EP10), bỏ qua với trạng thái khác. |
 | **Quyền** | Chỉ `KY_THUAT_VIEN`. Người thực hiện lấy từ `x-employee-id`. |
 | **Truy vết** | US6 → FR6 → UC6; QT03: không quay lại trạng thái trước, mỗi lần chuyển lưu thời điểm và người thực hiện. |
 
@@ -290,6 +296,7 @@ x-center-id: 1
 
 {
   "to_status": "DA_PHAN_CONG",
+  "technician_id": 33,
   "note": "Nhận phiếu"
 }
 ```
@@ -308,6 +315,7 @@ Trả toàn bộ phiếu sau khi cập nhật, cùng dạng với EP7: `{"data":
 | `403` | Vai trò khác `KY_THUAT_VIEN`. | `KHONG_DU_QUYEN` |
 | `404` | Không có phiếu, hoặc phiếu thuộc trung tâm khác. | `KHONG_TIM_THAY` |
 | `422` | Chuyển trạng thái ngoài vòng đời cho phép, gồm chuyển lùi; phiếu và lịch sử không đổi. | `CHUYEN_TRANG_THAI_KHONG_HOP_LE` |
+| `422` | `DA_PHAN_CONG` thiếu `technician_id`, hoặc kỹ thuật viên không hợp lệ (A4). | `CAN_CHON_KY_THUAT_VIEN`, `KY_THUAT_VIEN_KHONG_HOP_LE` |
 | `409` | Trạng thái phiếu vừa bị người khác đổi trong lúc xử lý. | `XUNG_DOT_TRANG_THAI` |
 
 Ví dụ lỗi `422`:
@@ -332,6 +340,8 @@ Dùng cùng quy ước thành công `{"data": ...}` và định dạng lỗi ở
 | EP1 `GET /api/customers?phone={phone}` | Query `phone` bắt buộc, chuẩn hóa được về 10 chữ số bắt đầu bằng `0`. | `200` với `data` là một khách hàng (`customer_id`, `full_name`, `phone` đã che, `email`, `address`). | `400 DU_LIEU_KHONG_HOP_LE` kèm `fields.phone` (thiếu hoặc sai định dạng, UC2-3b); `404 KHONG_TIM_THAY` (chưa có khách, giao diện đề nghị tạo mới). |
 | EP2 `POST /api/customers` | Body: `full_name` (bắt buộc, 1–120 ký tự), `phone` (bắt buộc, duy nhất), `email` (tùy chọn, đúng định dạng, tối đa 120), `address` (tùy chọn, tối đa 255). Chuỗi rỗng coi như `null`. | `201` với hồ sơ vừa tạo (cùng dạng EP1). | `400 DU_LIEU_KHONG_HOP_LE` kèm `fields`; `409 SDT_DA_TON_TAI` khi số đã có hồ sơ (kể cả hai yêu cầu đồng thời; thân phản hồi không kèm `customer_id`, giao diện gọi EP1 với cùng số để lấy hồ sơ có sẵn). |
 | EP3 `GET /api/customers/{customer_id}/devices` | Path `customer_id` là số nguyên dương. | `200` với `data` là mảng thiết bị; khách chưa có thiết bị trả `[]`, không phải lỗi. | `400 DU_LIEU_KHONG_HOP_LE` (`customer_id` sai); `404 KHONG_TIM_THAY` khi khách không tồn tại. |
+| EP9 `POST /api/customers/{customer_id}/devices` | Path `customer_id`. Body: `product_name` (bắt buộc, 1–120), `serial_no` (bắt buộc, 1–50, duy nhất), `purchase_date` (tùy chọn, `YYYY-MM-DD`, không ở tương lai; rỗng = chưa có ngày mua), `warranty_months` (bắt buộc, số nguyên 0–120). | `201` với thiết bị vừa tạo (dạng `toDeviceView`). | `400 DU_LIEU_KHONG_HOP_LE` kèm `fields`; `404 KHONG_TIM_THAY` (khách không tồn tại); `409 SERIAL_DA_TON_TAI` kèm `fields.serial_no`. |
+| EP10 `GET /api/technicians` | Không có tham số; chỉ `KY_THUAT_VIEN`, `QUAN_LY_TRUNG_TAM`. | `200` với `data` là mảng `technician_id`, `technician_code`, `full_name`, `level` của trung tâm người gọi, sắp theo tên. | `403 KHONG_DU_QUYEN` (vai trò khác). |
 | EP8 `GET /api/issue-categories` | Không có tham số. Mọi vai trò hợp lệ. | `200` với `data` là mảng nhóm sự cố đang dùng (`category_id`, `category_name`, `default_priority`), sắp theo `category_id`. | `401 CHUA_XAC_THUC`. |
 
 ### Ví dụ EP1 – `200 OK`
@@ -501,3 +511,11 @@ x-role: NHAN_VIEN_TIEP_NHAN
 | EP8 `GET /api/issue-categories` | Chưa có | Thêm mới | Ô chọn nhóm sự cố lấy từ API, không ghi cứng trong giao diện. |
 | CORS | Chưa có | Cho phép nguồn `CORS_ORIGIN` | Giao diện (cổng 5173) gọi API (cổng 3000). |
 | Cấu trúc mã nguồn | Hàm chuyển đổi và kiểm tra nằm lẫn trong service và routes | `contracts/` (toTicketView, toCustomerView, toDeviceView) và `validators/` (zod) | Hợp đồng viết và thi hành ở một chỗ; đổi tên cột CSDL chỉ sửa một nơi. |
+## 1.13. Thay đổi so với v1.2 (Sprint 2, buổi 10)
+
+| Nội dung | v1.2 | v1.3 | Lý do |
+|---|---|---|---|
+| EP5 `GET /api/tickets` | Chỉ lọc `status` | Thêm `open=true` (loại `DA_DONG`, `DA_HUY`); giao diện mặc định "Đang mở" | Danh sách sắp theo hạn tăng dần nên phiếu cũ đã đóng chiếm đầu danh sách, phiếu mới nằm trang cuối (A1). Thay đổi **tương thích ngược**: không gửi `open` thì hành vi như cũ. |
+| EP4 `POST /api/tickets` | `approved_by` sai khóa ngoại trả `500` | Kiểm tra người phê duyệt: phải là Quản lý trung tâm cùng trung tâm, sai trả `422 NGUOI_PHE_DUYET_KHONG_HOP_LE` | Lỗi dữ liệu người dùng không được báo là lỗi hệ thống (A3, SRS 8a). |
+| EP6 `PATCH .../status` | Không ghi kỹ thuật viên | `DA_PHAN_CONG` bắt buộc `technician_id`, ghi vào phiếu; EP7 và EP5 trả thêm `technician_name` | Phân công mà phiếu không có kỹ thuật viên là sai nghiệp vụ (A4, C2). `employee` và `technician` là hai bảng không liên kết nên phải chọn kỹ thuật viên tường minh. Thay đổi **phá vỡ nhẹ**: gọi `DA_PHAN_CONG` không kèm `technician_id` nay bị `422`. |
+| EP9, EP10 | Chưa có | Thêm mới | Khách mới tạo chưa có thiết bị thì không tạo được phiếu (A2); giao diện cần danh sách kỹ thuật viên để phân công. |
