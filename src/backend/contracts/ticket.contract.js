@@ -20,6 +20,7 @@
 //   customer_name, product_name, serial_no : chuỗi
 //   customer_phone : chuỗi; CHE (090****567) trừ vai trò QUAN_LY_TRUNG_TAM (NFR2)
 //   category_name  : chuỗi HOẶC null nếu chưa phân loại
+//   technician_name: chuỗi HOẶC null nếu chưa phân công
 //
 // Ý NGHĨA ĐẶC BIỆT:
 //   null ở technician_id = chưa phân công (KHÔNG phải lỗi, KHÔNG phải 0).
@@ -59,6 +60,7 @@ function toTicketView(r, actor) {
     view.product_name = r.product_name;
     view.serial_no = r.serial_no;
     view.category_name = r.category_name ?? null;
+    view.technician_name = r.technician_name ?? null;
   }
   return view;
 }

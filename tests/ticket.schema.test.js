@@ -47,3 +47,16 @@ test('changeStatus: to_status bắt buộc và phải thuộc danh sách', () =>
   assert.throws(() => parseOrThrow(changeStatusSchema, {}), AppError);
   assert.equal(parseOrThrow(changeStatusSchema, { to_status: 'DANG_XU_LY' }).to_status, 'DANG_XU_LY');
 });
+
+// ---- A1: tham số open; A4: technician_id ----
+test('A1: open=true/false được đổi sang boolean; giá trị khác bị từ chối (dữ liệu sai)', () => {
+  assert.equal(parseOrThrow(listQuerySchema, { open: 'true' }).open, true);
+  assert.equal(parseOrThrow(listQuerySchema, { open: 'false' }).open, false);
+  assert.throws(() => parseOrThrow(listQuerySchema, { open: 'abc' }),
+    (e) => e instanceof AppError && e.fields.open === 'open chỉ nhận true hoặc false');
+});
+
+test('A4: changeStatus nhận technician_id là số nguyên dương, sai thì 400 (dữ liệu sai)', () => {
+  assert.equal(parseOrThrow(changeStatusSchema, { to_status: 'DA_PHAN_CONG', technician_id: 33 }).technician_id, 33);
+  assert.throws(() => parseOrThrow(changeStatusSchema, { to_status: 'DA_PHAN_CONG', technician_id: -1 }), AppError);
+});

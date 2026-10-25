@@ -3,11 +3,13 @@ const { pool } = require('../db/pool');
 // Câu SELECT dùng chung: nối khách hàng, thiết bị, nhóm sự cố để hiển thị danh sách/chi tiết.
 const SELECT_JOINED = `
   SELECT t.*, c.full_name AS customer_name, c.phone AS customer_phone,
-         d.product_name, d.serial_no, ic.category_name
+         d.product_name, d.serial_no, ic.category_name,
+         tech.full_name AS technician_name
   FROM ticket t
   JOIN customer c ON c.customer_id = t.customer_id
   JOIN device d   ON d.device_id   = t.device_id
-  LEFT JOIN issue_category ic ON ic.category_id = t.category_id`;
+  LEFT JOIN issue_category ic ON ic.category_id = t.category_id
+  LEFT JOIN technician tech   ON tech.technician_id = t.technician_id`;
 
 async function findByIdempotencyKey(key) {
   const { rows } = await pool.query('SELECT * FROM ticket WHERE idempotency_key = $1', [key]);
@@ -31,13 +33,15 @@ async function findById(ticketId, centerId) {
 }
 
 // Lọc + sắp xếp + phân trang ngay trong SQL, dựa vào idx_ticket_center_status_due (NFR1).
-async function list({ centerId, status, page, size }) {
+// `open` = true: loại phiếu đã đóng (DA_DONG, DA_HUY) để trả lời "hôm nay xử lý phiếu nào trước?" (A1).
+async function list({ centerId, status, open, page, size }) {
   const where = ['t.center_id = $1', 't.is_active = TRUE'];
   const params = [centerId];
   if (status) {
     params.push(status);
     where.push(`t.status = $${params.length}`);
   }
+  if (open) where.push(`t.status NOT IN ('DA_DONG', 'DA_HUY')`);
   const whereSql = where.join(' AND ');
 
   const total = (
@@ -95,16 +99,19 @@ async function createWithInitialLog(t, actorId) {
 
 // Đổi trạng thái + ghi lịch sử trong một giao dịch. Điều kiện "AND status = $3"
 // bảo đảm không ghi đè nếu người khác vừa đổi trạng thái (trả null -> service báo 409).
-async function updateStatus({ ticketId, fromStatus, toStatus, closedAt, actorId, note }) {
+// technicianId: chỉ truyền khi chuyển sang DA_PHAN_CONG (A4); null thì giữ nguyên kỹ thuật viên hiện có.
+async function updateStatus({ ticketId, fromStatus, toStatus, closedAt, technicianId = null, actorId, note }) {
   const client = await pool.connect();
   try {
     await client.query('BEGIN');
     const { rows } = await client.query(
       `UPDATE ticket
-          SET status = $2, closed_at = COALESCE($4::timestamptz, closed_at)
+          SET status = $2,
+              closed_at = COALESCE($4::timestamptz, closed_at),
+              technician_id = COALESCE($5::bigint, technician_id)
         WHERE ticket_id = $1 AND status = $3
         RETURNING *`,
-      [ticketId, toStatus, fromStatus, closedAt]
+      [ticketId, toStatus, fromStatus, closedAt, technicianId]
     );
     if (rows.length === 0) {
       await client.query('ROLLBACK');

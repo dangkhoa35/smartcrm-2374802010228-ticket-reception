@@ -4,6 +4,8 @@ const { computeDueDate } = require('../utils/dueDate');
 const ticketRepo = require('../repositories/ticket.repository');
 const deviceRepo = require('../repositories/device.repository');
 const categoryRepo = require('../repositories/issueCategory.repository');
+const employeeRepo = require('../repositories/employee.repository');
+const technicianRepo = require('../repositories/technician.repository');
 
 // QT03: vòng đời trạng thái, chỉ đi tới, không quay lại. Chỉnh cho khớp SRS của bạn nếu khác.
 const TRANSITIONS = {
@@ -22,6 +24,32 @@ function isUnderWarranty(device, receivedAt) {
   const end = new Date(device.purchase_date);
   end.setMonth(end.getMonth() + device.warranty_months);
   return receivedAt <= end;
+}
+
+// SRS 8a: người phê duyệt phải là Quản lý trung tâm thuộc CÙNG trung tâm với người thao tác.
+// Hàm thuần (không đụng CSDL) để test được; sai -> 422 thay vì để CSDL báo vi phạm khóa ngoại (lỗi 500).
+function checkApprover(approver, centerId) {
+  if (!approver || approver.role !== 'QUAN_LY_TRUNG_TAM' || Number(approver.center_id) !== Number(centerId)) {
+    throw new AppError(422, 'NGUOI_PHE_DUYET_KHONG_HOP_LE',
+      'Mã phê duyệt không phải của một Quản lý trung tâm thuộc trung tâm này');
+  }
+}
+
+// UC6: chuyển sang DA_PHAN_CONG thì BẮT BUỘC gán một kỹ thuật viên đang hoạt động của cùng trung tâm.
+// Trả technician_id cần ghi, hoặc null nếu trạng thái đích không liên quan đến phân công.
+function checkAssignment(toStatus, technicianId, technician, centerId) {
+  if (toStatus !== 'DA_PHAN_CONG') return null;
+  if (!technicianId) {
+    throw new AppError(422, 'CAN_CHON_KY_THUAT_VIEN',
+      'Cần chọn kỹ thuật viên khi chuyển sang "Đã phân công"',
+      { technician_id: 'Vui lòng chọn kỹ thuật viên' });
+  }
+  if (!technician || !technician.is_active || Number(technician.center_id) !== Number(centerId)) {
+    throw new AppError(422, 'KY_THUAT_VIEN_KHONG_HOP_LE',
+      'Kỹ thuật viên không tồn tại, đã ngừng hoạt động hoặc thuộc trung tâm khác',
+      { technician_id: 'Kỹ thuật viên không hợp lệ' });
+  }
+  return technician.technician_id;
 }
 
 // UC2 – Tạo Phiếu bảo hành mới. `input` đã được lớp API kiểm kiểu dữ liệu.
@@ -43,6 +71,11 @@ async function createTicket(input, actor, idempotencyKey) {
   if (open) {
     throw new AppError(409, 'THIET_BI_DANG_CO_PHIEU_MO',
       `Thiết bị đang có phiếu chưa đóng: ${open.ticket_code}`);
+  }
+
+  // SRS 8a: nếu có mã phê duyệt thì phải là Quản lý trung tâm cùng trung tâm
+  if (input.approved_by) {
+    checkApprover(await employeeRepo.findById(input.approved_by), actor.centerId);
   }
 
   // QT01: hết bảo hành thì cần Quản lý trung tâm phê duyệt (approved_by)
@@ -97,13 +130,17 @@ async function createTicket(input, actor, idempotencyKey) {
       const existing = await ticketRepo.findByIdempotencyKey(idempotencyKey);
       return { ticket: toTicketView(existing, actor), created: false };
     }
+    // Lưới an toàn: khóa ngoại sai (ví dụ approved_by) là lỗi dữ liệu người dùng, không phải lỗi hệ thống
+    if (e.code === '23503' && /approved_by/.test(e.constraint || '')) {
+      throw new AppError(422, 'NGUOI_PHE_DUYET_KHONG_HOP_LE', 'Mã phê duyệt không tồn tại');
+    }
     throw e;
   }
 }
 
 // UC5 – danh sách theo Hạn cam kết, lọc trạng thái, phân trang (chỉ phiếu của trung tâm mình)
-async function listTickets({ status, page, size }, actor) {
-  const { rows, total } = await ticketRepo.list({ centerId: actor.centerId, status, page, size });
+async function listTickets({ status, open, page, size }, actor) {
+  const { rows, total } = await ticketRepo.list({ centerId: actor.centerId, status, open, page, size });
   return {
     data: rows.map((r) => toTicketView(r, actor)),
     paging: { page, size, total, total_pages: Math.ceil(total / size) },
@@ -117,7 +154,7 @@ async function getTicket(ticketId, actor) {
 }
 
 // UC6 – Chuyển trạng thái đúng vòng đời, ghi lịch sử (QT03)
-async function changeStatus(ticketId, { to_status, note }, actor) {
+async function changeStatus(ticketId, { to_status, note, technician_id }, actor) {
   const current = await ticketRepo.findById(ticketId, actor.centerId);
   if (!current) throw new AppError(404, 'KHONG_TIM_THAY', 'Không tìm thấy phiếu bảo hành');
 
@@ -127,9 +164,14 @@ async function changeStatus(ticketId, { to_status, note }, actor) {
   }
   const closedAt = ['DA_DONG', 'DA_HUY'].includes(to_status) ? new Date() : null;
 
+  // A4: phân công thì phải ghi kỹ thuật viên vào phiếu
+  const technician = to_status === 'DA_PHAN_CONG' && technician_id
+    ? await technicianRepo.findById(technician_id) : null;
+  const technicianId = checkAssignment(to_status, technician_id, technician, actor.centerId);
+
   const updated = await ticketRepo.updateStatus({
     ticketId, fromStatus: current.status, toStatus: to_status,
-    closedAt, actorId: actor.employeeId, note,
+    closedAt, technicianId, actorId: actor.employeeId, note,
   });
   if (!updated) {
     throw new AppError(409, 'XUNG_DOT_TRANG_THAI', 'Trạng thái phiếu vừa được người khác thay đổi');
@@ -137,4 +179,7 @@ async function changeStatus(ticketId, { to_status, note }, actor) {
   return getTicket(ticketId, actor);
 }
 
-module.exports = { createTicket, listTickets, getTicket, changeStatus, TRANSITIONS, isUnderWarranty };
+module.exports = {
+  createTicket, listTickets, getTicket, changeStatus,
+  TRANSITIONS, isUnderWarranty, checkApprover, checkAssignment,
+};

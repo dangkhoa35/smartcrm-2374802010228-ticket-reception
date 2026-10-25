@@ -40,11 +40,16 @@ const listQuerySchema = z.object({
     .int('Kích thước trang từ 1 đến 100').min(1, 'Kích thước trang từ 1 đến 100')
     .max(100, 'Kích thước trang từ 1 đến 100').default(20),
   status: z.enum(STATUSES, { errorMap: () => ({ message: `Trạng thái phải thuộc ${STATUSES.join(', ')}` }) }).optional(),
+  // open=true: chỉ phiếu chưa đóng (loại DA_DONG, DA_HUY). Chấp nhận 'true' / 'false'.
+  open: z.enum(['true', 'false'], { errorMap: () => ({ message: 'open chỉ nhận true hoặc false' }) })
+    .transform((v) => v === 'true').optional(),
 });
 
 const changeStatusSchema = z.object({
   to_status: z.enum(STATUSES, { errorMap: () => ({ message: `Trạng thái đích phải thuộc ${STATUSES.join(', ')}` }) }),
   note: z.string({ invalid_type_error: 'Ghi chú phải là chữ' }).max(255, 'Ghi chú tối đa 255 ký tự').nullish(),
+  // Bắt buộc khi to_status = DA_PHAN_CONG (service kiểm tra); các trạng thái khác bỏ qua.
+  technician_id: optionalPosInt('Mã kỹ thuật viên không hợp lệ'),
 });
 
 const idParamSchema = z.object({

@@ -33,4 +33,31 @@ const customerIdParamSchema = z.object({
     .positive('Mã khách hàng phải là số nguyên dương'),
 });
 
-module.exports = { lookupCustomerQuerySchema, createCustomerSchema, customerIdParamSchema };
+// EP9 – thêm thiết bị. purchase_date là YYYY-MM-DD, không được ở tương lai; để trống = chưa có ngày mua
+// (khi đó QT01 coi như hết bảo hành, cần Quản lý phê duyệt lúc tạo phiếu).
+const todayIso = () => new Date().toISOString().slice(0, 10);
+
+const createDeviceSchema = z.object({
+  product_name: z
+    .string({ required_error: 'Vui lòng nhập tên sản phẩm', invalid_type_error: 'Tên sản phẩm phải là chữ' })
+    .trim()
+    .min(1, 'Vui lòng nhập tên sản phẩm')
+    .max(120, 'Tên sản phẩm tối đa 120 ký tự'),
+  serial_no: z
+    .string({ required_error: 'Vui lòng nhập số serial', invalid_type_error: 'Số serial phải là chữ' })
+    .trim()
+    .min(1, 'Vui lòng nhập số serial')
+    .max(50, 'Số serial tối đa 50 ký tự'),
+  purchase_date: optionalText(
+    z.string()
+      .regex(/^\d{4}-\d{2}-\d{2}$/, 'Ngày mua phải có dạng YYYY-MM-DD')
+      .refine((v) => !Number.isNaN(Date.parse(v)) && new Date(v).toISOString().slice(0, 10) === v, 'Ngày mua không tồn tại')
+      .refine((v) => v <= todayIso(), 'Ngày mua không được ở tương lai')),
+  warranty_months: z
+    .number({ required_error: 'Vui lòng nhập số tháng bảo hành', invalid_type_error: 'Số tháng bảo hành phải là số' })
+    .int('Số tháng bảo hành phải là số nguyên')
+    .min(0, 'Số tháng bảo hành không được âm')
+    .max(120, 'Số tháng bảo hành tối đa 120'),
+});
+
+module.exports = { lookupCustomerQuerySchema, createCustomerSchema, customerIdParamSchema, createDeviceSchema };

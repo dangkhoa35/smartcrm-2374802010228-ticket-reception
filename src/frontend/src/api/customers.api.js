@@ -10,4 +10,7 @@ export const customersApi = {
   // EP3
   devices: async (customerId) =>
     (await request(`/api/customers/${customerId}/devices`)).data,
+  // EP9: thêm thiết bị cho khách; ném 400 kèm fields hoặc 409 SERIAL_DA_TON_TAI
+  addDevice: async (customerId, payload) =>
+    (await request(`/api/customers/${customerId}/devices`, { method: 'POST', body: payload })).data,
 };

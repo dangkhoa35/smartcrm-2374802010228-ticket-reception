@@ -13,4 +13,13 @@ async function listByCustomer(customerId) {
   return rows;
 }
 
-module.exports = { findById, listByCustomer };
+// EP9: thêm thiết bị cho khách hàng. Trùng số serial -> pg ném 23505 (service đổi thành 409).
+async function create({ customerId, productName, serialNo, purchaseDate, warrantyMonths }) {
+  const { rows } = await pool.query(
+    `INSERT INTO device (customer_id, product_name, serial_no, purchase_date, warranty_months)
+     VALUES ($1, $2, $3, $4, $5) RETURNING *`,
+    [customerId, productName, serialNo, purchaseDate, warrantyMonths]);
+  return rows[0];
+}
+
+module.exports = { findById, listByCustomer, create };

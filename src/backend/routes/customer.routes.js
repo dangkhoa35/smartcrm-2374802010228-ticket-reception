@@ -3,7 +3,7 @@ const requireRole = require('../middlewares/requireRole');
 const customerService = require('../services/customer.service');
 const { parseOrThrow } = require('../validators/parse');
 const {
-  lookupCustomerQuerySchema, createCustomerSchema, customerIdParamSchema,
+  lookupCustomerQuerySchema, createCustomerSchema, customerIdParamSchema, createDeviceSchema,
 } = require('../validators/customer.schema');
 
 const wrap = (fn) => (req, res, next) => Promise.resolve(fn(req, res, next)).catch(next);
@@ -27,6 +27,13 @@ router.post('/', wrap(async (req, res) => {
 router.get('/:customer_id/devices', wrap(async (req, res) => {
   const { customer_id } = parseOrThrow(customerIdParamSchema, req.params);
   res.json({ data: await customerService.listDevices(customer_id) });
+}));
+
+// EP9: POST /api/customers/:customer_id/devices – thêm thiết bị cho khách hàng
+router.post('/:customer_id/devices', wrap(async (req, res) => {
+  const { customer_id } = parseOrThrow(customerIdParamSchema, req.params);
+  const input = parseOrThrow(createDeviceSchema, req.body);
+  res.status(201).json({ data: await customerService.createDevice(customer_id, input) });
 }));
 
 module.exports = router;

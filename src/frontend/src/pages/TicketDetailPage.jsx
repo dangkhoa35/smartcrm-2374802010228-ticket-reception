@@ -1,6 +1,8 @@
 import { useState } from 'react';
 import { Link, useLocation, useParams } from 'react-router-dom';
 import { ticketsApi } from '../api/tickets.api';
+import { techniciansApi } from '../api/technicians.api';
+import { useApi } from '../hooks/useApi';
 import { useSession } from '../auth/SessionContext';
 import { useTicket } from '../hooks/useTickets';
 import { DataState } from '../components/DataState';
@@ -52,7 +54,7 @@ function TicketBody({ t, role, onChanged }) {
         <Info k="Ngày tiếp nhận" v={formatDateTime(t.received_at)} />
         <Info k="Hạn cam kết" v={<>{formatDateTime(t.due_date)} {due.text && <span className={`due-${due.kind}`}>({due.text})</span>}</>} />
         <Info k="Bảo hành" v={t.is_warranty ? 'Còn bảo hành' : 'Hết bảo hành (đã được Quản lý phê duyệt)'} />
-        <Info k="Kỹ thuật viên" v={t.technician_id ?? 'Chưa phân công'} />
+        <Info k="Kỹ thuật viên" v={t.technician_name ?? 'Chưa phân công'} />
         <Info k="Ngày đóng phiếu" v={formatDateTime(t.closed_at)} />
       </div>
       <StatusForm t={t} role={role} onChanged={onChanged} />
@@ -71,6 +73,9 @@ function StatusForm({ t, role, onChanged }) {
   const [busy, setBusy] = useState(false);
   const [err, setErr] = useState(null);
   const [ok, setOk] = useState('');
+  const [techId, setTechId] = useState('');
+  const needTech = to === 'DA_PHAN_CONG'; // phân công thì phải chọn kỹ thuật viên (A4)
+  const techs = useApi(() => (needTech ? techniciansApi.list() : Promise.resolve(null)), [needTech]);
 
   if (role !== 'KY_THUAT_VIEN') {
     return <p className="muted">Chỉ Kỹ thuật viên được chuyển trạng thái phiếu. Đổi vai trò ở góc trên bên phải để thử.</p>;
@@ -82,11 +87,12 @@ function StatusForm({ t, role, onChanged }) {
   async function submit(e) {
     e.preventDefault();
     if (!to) { setErr({ message: 'Vui lòng chọn trạng thái mới.' }); return; }
+    if (needTech && !techId) { setErr({ message: 'Vui lòng chọn kỹ thuật viên phụ trách.', fields: { technician_id: 'Vui lòng chọn kỹ thuật viên' } }); return; }
     setBusy(true); setErr(null); setOk('');
     try {
-      await ticketsApi.changeStatus(t.ticket_id, to, note.trim());
+      await ticketsApi.changeStatus(t.ticket_id, to, note.trim(), needTech ? techId : undefined);
       setOk(`Đã chuyển phiếu sang "${label(STATUS_LABEL, to)}".`);
-      setTo(''); setNote('');
+      setTo(''); setNote(''); setTechId('');
       onChanged();
     } catch (ex) {
       setErr(ex); // 422 vòng đời / 409 xung đột: máy chủ đã viết sẵn câu cho người dùng
@@ -104,6 +110,19 @@ function StatusForm({ t, role, onChanged }) {
           {options.map((s) => <option key={s} value={s}>{STATUS_LABEL[s]}</option>)}
         </select>
       </label>
+      {needTech && (
+        <label>Kỹ thuật viên phụ trách
+          <DataState loading={techs.loading} error={techs.error} data={techs.result} onRetry={techs.reload}
+            empty={{ message: 'Trung tâm chưa có kỹ thuật viên nào đang hoạt động.' }}>
+            {(list) => (
+              <select value={techId} onChange={(e) => setTechId(e.target.value)}>
+                <option value="">— Chọn kỹ thuật viên —</option>
+                {list.map((k) => <option key={k.technician_id} value={k.technician_id}>{k.full_name} ({k.technician_code})</option>)}
+              </select>
+            )}
+          </DataState>
+        </label>
+      )}
       <label>Ghi chú
         <input value={note} maxLength={255} onChange={(e) => setNote(e.target.value)} placeholder="Tùy chọn" />
       </label>

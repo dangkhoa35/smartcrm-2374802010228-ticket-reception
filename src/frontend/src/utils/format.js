@@ -1,7 +1,11 @@
 import { CLOSED_STATUSES } from './labels';
 
 const TZ = 'Asia/Ho_Chi_Minh';
-const fmt = new Intl.DateTimeFormat('vi-VN', { dateStyle: 'short', timeStyle: 'short', timeZone: TZ });
+// Năm 4 chữ số (24/10/2026 14:05) để không nhập nhằng 1/9/24 (C1)
+const fmt = new Intl.DateTimeFormat('vi-VN', {
+  day: '2-digit', month: '2-digit', year: 'numeric',
+  hour: '2-digit', minute: '2-digit', hour12: false, timeZone: TZ,
+});
 
 // API trả ISO 8601 UTC; giao diện đổi sang giờ Việt Nam khi hiển thị.
 export function formatDateTime(iso) {

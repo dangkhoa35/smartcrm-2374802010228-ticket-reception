@@ -37,4 +37,27 @@ async function listDevices(customerId) {
   return rows.map(toDeviceView);
 }
 
-module.exports = { lookupByPhone, createCustomer, listDevices };
+// EP9 – thêm thiết bị cho khách hàng (khách phải tồn tại; serial không được trùng)
+async function createDevice(customerId, input) {
+  const customer = await customerRepo.findById(customerId);
+  if (!customer) throw new AppError(404, 'KHONG_TIM_THAY', 'Không tìm thấy khách hàng');
+  try {
+    const row = await deviceRepo.create({
+      customerId,
+      productName: input.product_name,
+      serialNo: input.serial_no,
+      purchaseDate: input.purchase_date || null,
+      warrantyMonths: input.warranty_months,
+    });
+    return toDeviceView(row);
+  } catch (e) {
+    if (e.code === '23505') {
+      throw new AppError(409, 'SERIAL_DA_TON_TAI', 'Số serial này đã có trong hệ thống', {
+        serial_no: 'Số serial này đã được đăng ký cho một thiết bị khác',
+      });
+    }
+    throw e;
+  }
+}
+
+module.exports = { lookupByPhone, createCustomer, listDevices, createDevice };

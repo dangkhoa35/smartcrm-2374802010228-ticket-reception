@@ -150,6 +150,7 @@ function TicketStep({ customer, centerId, onChangeCustomer }) {
   const [busy, setBusy] = useState(false);
   const [err, setErr] = useState(null);
   const [localErr, setLocalErr] = useState({});
+  const [showAdd, setShowAdd] = useState(false); // biểu mẫu thêm thiết bị (A2)
 
   const toggleAcc = (a) =>
     setAccessories((cur) => (cur.includes(a) ? cur.filter((x) => x !== a) : [...cur, a]));
@@ -192,8 +193,13 @@ function TicketStep({ customer, centerId, onChangeCustomer }) {
       <h2>Thiết bị</h2>
       <DataState loading={devices.loading} error={devices.error} data={devices.result} onRetry={devices.reload}
         empty={{
-          message: 'Khách hàng này chưa có thiết bị nào trong hệ thống nên chưa thể tạo phiếu. Hãy chọn khách hàng khác hoặc nhờ quản trị viên thêm thiết bị.',
-          action: <button type="button" onClick={onChangeCustomer}>Chọn khách hàng khác</button>,
+          message: 'Khách hàng này chưa có thiết bị nào trong hệ thống. Hãy thêm thiết bị bên dưới hoặc chọn khách hàng khác.',
+          action: (
+            <>
+              <AddDeviceForm customerId={customer.customer_id} onAdded={(d) => { setDeviceId(String(d.device_id)); devices.reload(); }} />
+              <button type="button" onClick={onChangeCustomer}>Chọn khách hàng khác</button>
+            </>
+          ),
         }}>
         {(list) => {
           const dev = list.find((d) => String(d.device_id) === deviceId);
@@ -207,6 +213,11 @@ function TicketStep({ customer, centerId, onChangeCustomer }) {
                 </select>
                 <FieldError message={fe.device_id} />
               </label>
+              {!showAdd && <button type="button" onClick={() => setShowAdd(true)}>+ Thêm thiết bị mới</button>}
+              {showAdd && (
+                <AddDeviceForm customerId={customer.customer_id} onCancel={() => setShowAdd(false)}
+                  onAdded={(d) => { setShowAdd(false); setDeviceId(String(d.device_id)); devices.reload(); }} />
+              )}
               {dev && (
                 <p className="muted">
                   Ngày mua: <strong>{formatDate(dev.purchase_date)}</strong> · Bảo hành: <strong>{dev.warranty_months} tháng</strong> ·
@@ -216,7 +227,7 @@ function TicketStep({ customer, centerId, onChangeCustomer }) {
               {hint && hint.kind !== 'valid' && (
                 <label>Mã Quản lý trung tâm phê duyệt (cần khi hết bảo hành hoặc thiếu ngày mua)
                   <input inputMode="numeric" value={approvedBy} onChange={(e) => setApprovedBy(e.target.value)} />
-                  <FieldError message={localErr.approved_by ?? fe.approved_by} />
+                  <FieldError message={localErr.approved_by ?? fe.approved_by ?? (err?.code === 'NGUOI_PHE_DUYET_KHONG_HOP_LE' ? err.message : undefined)} />
                 </label>
               )}
             </>
@@ -270,7 +281,7 @@ function TicketStep({ customer, centerId, onChangeCustomer }) {
 
       <p className="muted">Trung tâm bảo hành: số {centerId} (lấy từ phiên làm việc). Hạn cam kết do hệ thống tự tính khi lưu (QT02).</p>
 
-      {err && !err.fields && (
+      {err && !err.fields && err.code !== 'NGUOI_PHE_DUYET_KHONG_HOP_LE' && (
         <div className="alert alert-error" role="alert">
           <p>{err.message}</p>
           {err.code === 'KHONG_KET_NOI' && <p>Dữ liệu đã nhập vẫn được giữ. Bấm Lưu phiếu bảo hành để thử lại; hệ thống không tạo phiếu trùng.</p>}
@@ -286,5 +297,63 @@ function TicketStep({ customer, centerId, onChangeCustomer }) {
       </div>
       </>}
     </form>
+  );
+}
+
+/* ---------- Thêm thiết bị cho khách hàng (EP9) ----------
+   Không dùng <form> lồng nhau (HTML không cho phép): dùng nút type="button" và bắt phím Enter. */
+function AddDeviceForm({ customerId, onAdded, onCancel }) {
+  const [f, setF] = useState({ product_name: '', serial_no: '', purchase_date: '', warranty_months: '12' });
+  const [busy, setBusy] = useState(false);
+  const [err, setErr] = useState(null);
+  const set = (k) => (e) => setF({ ...f, [k]: e.target.value });
+
+  async function add() {
+    const months = f.warranty_months.trim() === '' ? NaN : Number(f.warranty_months);
+    setBusy(true); setErr(null);
+    try {
+      const d = await customersApi.addDevice(customerId, {
+        product_name: f.product_name,
+        serial_no: f.serial_no,
+        purchase_date: f.purchase_date || null,
+        warranty_months: Number.isNaN(months) ? undefined : months,
+      });
+      onAdded(d);
+    } catch (ex) {
+      setErr(ex);
+    } finally {
+      setBusy(false);
+    }
+  }
+  const onEnter = (e) => { if (e.key === 'Enter') { e.preventDefault(); add(); } };
+  const fe = err?.fields ?? {};
+
+  return (
+    <div className="subcard form">
+      <h3>Thêm thiết bị mới</h3>
+      <label>Tên sản phẩm (bắt buộc)
+        <input value={f.product_name} onChange={set('product_name')} onKeyDown={onEnter} />
+        <FieldError message={fe.product_name} />
+      </label>
+      <label>Số serial (bắt buộc)
+        <input value={f.serial_no} onChange={set('serial_no')} onKeyDown={onEnter} />
+        <FieldError message={fe.serial_no} />
+      </label>
+      <label>Ngày mua (để trống nếu chưa rõ)
+        <input type="date" value={f.purchase_date} onChange={set('purchase_date')} onKeyDown={onEnter} />
+        <FieldError message={fe.purchase_date} />
+      </label>
+      <label>Số tháng bảo hành
+        <input inputMode="numeric" value={f.warranty_months} onChange={set('warranty_months')} onKeyDown={onEnter} />
+        <FieldError message={fe.warranty_months} />
+      </label>
+      {err && !err.fields && <p className="alert alert-error" role="alert">{err.message}</p>}
+      <div className="actions">
+        {onCancel && <button type="button" onClick={onCancel}>Hủy</button>}
+        <button type="button" className="primary" onClick={add} disabled={busy}>
+          {busy ? 'Đang lưu…' : 'Lưu thiết bị'}
+        </button>
+      </div>
+    </div>
   );
 }

@@ -47,3 +47,33 @@ describe('Danh sách phiếu', () => {
     expect(f.mock.calls.length).toBeGreaterThanOrEqual(2);
   });
 });
+
+describe('Danh sách phiếu – mặc định "Đang mở" (A1)', () => {
+  const page = { data: [ticket()], paging: { page: 1, size: 20, total: 1, total_pages: 1 } };
+
+  it('không chọn bộ lọc: gọi API với open=true để phiếu đã đóng không chiếm đầu danh sách', async () => {
+    const f = vi.fn().mockResolvedValue(ok(page));
+    vi.stubGlobal('fetch', f);
+    renderPage();
+    await screen.findByText('BH-000001/2026');
+    expect(f.mock.calls[0][0]).toContain('open=true');
+    expect(screen.getByRole('combobox')).toHaveValue('');
+  });
+
+  it('chọn "Tất cả": gọi API không có open và không có status', async () => {
+    const f = vi.fn().mockResolvedValue(ok(page));
+    vi.stubGlobal('fetch', f);
+    renderPage('/tickets?status=ALL');
+    await screen.findByText('BH-000001/2026');
+    const url = f.mock.calls[0][0];
+    expect(url).not.toContain('open=');
+    expect(url).not.toContain('status=');
+  });
+
+  it('Đang mở mà không còn phiếu nào: nói rõ và có nút Xem tất cả phiếu', async () => {
+    vi.stubGlobal('fetch', vi.fn().mockResolvedValue(ok({ data: [], paging: { page: 1, size: 20, total: 0, total_pages: 0 } })));
+    renderPage();
+    expect(await screen.findByText(/không có phiếu nào đang mở/)).toBeInTheDocument();
+    expect(screen.getByRole('button', { name: 'Xem tất cả phiếu' })).toBeInTheDocument();
+  });
+});

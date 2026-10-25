@@ -29,7 +29,7 @@ test('toTicketView trả đúng các trường của hợp đồng (luồng đú
     'accessories', 'category_id', 'category_name', 'center_id', 'closed_at', 'customer_id',
     'customer_name', 'customer_phone', 'device_id', 'due_date', 'is_warranty', 'issue_desc',
     'priority', 'product_name', 'received_at', 'serial_no', 'status', 'technician_id',
-    'ticket_code', 'ticket_id',
+    'technician_name', 'ticket_code', 'ticket_id',
   ]);
   assert.deepEqual(v.accessories, ['SAC', 'HOP']);
 });
@@ -57,4 +57,11 @@ test('không lộ cột nội bộ của bảng ticket ra ngoài hợp đồng',
   for (const k of ['idempotency_key', 'approved_by', 'is_active', 'acc_sac']) {
     assert.ok(!(k in v), `${k} không được nằm trong hợp đồng`);
   }
+});
+
+test('technician_name là null khi chưa phân công, là chuỗi khi đã phân công (A4)', () => {
+  assert.equal(toTicketView(hangMau(), TIEP_NHAN).technician_name, null);
+  const v = toTicketView(hangMau({ technician_id: 33, technician_name: 'Phan Kim Hạnh' }), TIEP_NHAN);
+  assert.equal(v.technician_id, 33);
+  assert.equal(v.technician_name, 'Phan Kim Hạnh');
 });

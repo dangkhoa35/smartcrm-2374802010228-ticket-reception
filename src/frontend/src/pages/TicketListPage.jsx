@@ -12,17 +12,24 @@ const SIZE = 20;
 export default function TicketListPage() {
   const { session } = useSession();
   const [params, setParams] = useSearchParams();
+  // Mặc định "Đang mở": ẩn phiếu đã đóng/hủy để phiếu cần xử lý nằm ở đầu danh sách (A1).
+  // '' = Đang mở · 'ALL' = Tất cả · còn lại = một trạng thái cụ thể.
   const status = params.get('status') || '';
+  const apiStatus = status && status !== 'ALL' ? status : undefined;
+  const openOnly = status === '';
   const page = Number(params.get('page')) || 1;
-  const { data, paging, loading, error, reload } = useTickets({ status: status || undefined, page, size: SIZE });
+  const { data, paging, loading, error, reload } = useTickets({ status: apiStatus, open: openOnly, page, size: SIZE });
 
   const setFilter = (next) => setParams(next, { replace: true });
   const clearFilter = () => setFilter({});
   const canCreate = session.role === 'NHAN_VIEN_TIEP_NHAN';
 
-  const empty = status
+  const empty = apiStatus
     ? { message: `Không có phiếu nào ở trạng thái "${label(STATUS_LABEL, status)}".`,
         action: <button type="button" onClick={clearFilter}>Xóa bộ lọc</button> }
+    : openOnly
+      ? { message: 'Hiện không có phiếu nào đang mở trong trung tâm này.',
+          action: <button type="button" onClick={() => setFilter({ status: 'ALL' })}>Xem tất cả phiếu</button> }
     : { message: 'Chưa có phiếu bảo hành nào trong trung tâm này.',
         action: canCreate ? <Link to="/tickets/new" className="button primary">Tạo phiếu bảo hành đầu tiên</Link> : null };
 
@@ -34,11 +41,12 @@ export default function TicketListPage() {
       <div className="toolbar">
         <label>Trạng thái phiếu{' '}
           <select value={status} onChange={(e) => setFilter(e.target.value ? { status: e.target.value } : {})}>
-            <option value="">Tất cả</option>
+            <option value="">Đang mở</option>
+            <option value="ALL">Tất cả</option>
             {STATUSES.map((s) => <option key={s} value={s}>{STATUS_LABEL[s]}</option>)}
           </select>
         </label>
-        {status && <button type="button" onClick={clearFilter}>Xóa bộ lọc</button>}
+        {apiStatus && <button type="button" onClick={clearFilter}>Xóa bộ lọc</button>}
         {canCreate && <Link to="/tickets/new" className="button primary">+ Tạo phiếu bảo hành</Link>}
       </div>
 

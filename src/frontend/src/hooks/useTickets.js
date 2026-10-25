@@ -1,9 +1,9 @@
 import { ticketsApi } from '../api/tickets.api';
 import { useApi } from './useApi';
 
-export function useTickets({ status, page, size }) {
+export function useTickets({ status, open, page, size }) {
   const { result, loading, error, reload } = useApi(
-    () => ticketsApi.list({ status, page, size }), [status, page, size]);
+    () => ticketsApi.list({ status, open, page, size }), [status, open, page, size]);
   return { data: result?.data ?? null, paging: result?.paging ?? null, loading, error, reload };
 }
 

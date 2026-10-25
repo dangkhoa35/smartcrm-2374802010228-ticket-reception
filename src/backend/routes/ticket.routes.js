@@ -25,10 +25,10 @@ router.post('/', requireRole('NHAN_VIEN_TIEP_NHAN'), wrap(async (req, res) => {
   res.status(created ? 201 : 200).json({ data: ticket });
 }));
 
-// GET /api/tickets?status=MOI&page=1&size=20 – danh sách theo Hạn cam kết tăng dần (UC5)
+// GET /api/tickets?status=MOI&open=true&page=1&size=20 – danh sách theo Hạn cam kết tăng dần (UC5)
 router.get('/', wrap(async (req, res) => {
   const q = parseOrThrow(listQuerySchema, req.query);
-  res.json(await ticketService.listTickets({ status: q.status, page: q.page, size: q.size }, req.actor));
+  res.json(await ticketService.listTickets({ status: q.status, open: q.open, page: q.page, size: q.size }, req.actor));
 }));
 
 // GET /api/tickets/:id – chi tiết
@@ -41,7 +41,7 @@ router.get('/:id', wrap(async (req, res) => {
 router.patch('/:id/status', requireRole('KY_THUAT_VIEN'), wrap(async (req, res) => {
   const { id } = parseOrThrow(idParamSchema, req.params);
   const body = parseOrThrow(changeStatusSchema, req.body);
-  res.json({ data: await ticketService.changeStatus(id, { to_status: body.to_status, note: body.note || undefined }, req.actor) });
+  res.json({ data: await ticketService.changeStatus(id, { to_status: body.to_status, note: body.note || undefined, technician_id: body.technician_id || undefined }, req.actor) });
 }));
 
 module.exports = router;

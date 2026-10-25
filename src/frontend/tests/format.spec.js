@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { dueState, warrantyHint } from '../src/utils/format';
+import { dueState, formatDateTime, warrantyHint } from '../src/utils/format';
 
 const NOW = new Date('2026-10-24T03:00:00Z').getTime();
 const t = (hoursFromNow, status = 'MOI') => ({ status, due_date: new Date(NOW + hoursFromNow * 3600e3).toISOString() });
@@ -16,4 +16,13 @@ describe('warrantyHint', () => {
   it('còn bảo hành', () => expect(warrantyHint({ purchase_date: '2026-03-10', warranty_months: 12 }, now).kind).toBe('valid'));
   it('hết bảo hành', () => expect(warrantyHint({ purchase_date: '2024-01-10', warranty_months: 12 }, now).kind).toBe('expired'));
   it('thiếu ngày mua là chưa xác minh', () => expect(warrantyHint({ purchase_date: null, warranty_months: 12 }, now).kind).toBe('unknown'));
+});
+
+describe('formatDateTime (C1)', () => {
+  it('hiện năm 4 chữ số theo giờ Việt Nam, không rút gọn thành 24', () => {
+    const out = formatDateTime('2026-10-24T03:00:00Z');
+    expect(out).toMatch(/24\/10\/2026/);
+    expect(out).toMatch(/10:00/); // 03:00 UTC = 10:00 giờ Việt Nam
+  });
+  it('không có giá trị thì hiện dấu gạch', () => expect(formatDateTime(null)).toBe('—'));
 });
