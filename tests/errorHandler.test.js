@@ -40,3 +40,13 @@ test('mất kết nối CSDL -> 503 nhưng vẫn cùng mã lỗi LOI_HE_THONG', 
   assert.strictEqual(res.code, 503);
   assert.strictEqual(res.body.error, 'LOI_HE_THONG');
 });
+
+// BUG: trong Docker, khi container CSDL dừng, tên "db" không phân giải được -> Node báo EAI_AGAIN.
+// Mã này chưa nằm trong danh sách lỗi hạ tầng nên bị trả 500 thay vì 503.
+test('không phân giải được tên máy CSDL (EAI_AGAIN) -> 503', () => {
+  const e = new Error('getaddrinfo EAI_AGAIN db'); e.code = 'EAI_AGAIN';
+  const { res, log } = chay(e);
+  assert.strictEqual(res.code, 503);
+  assert.strictEqual(res.body.error, 'LOI_HE_THONG');
+  assert.strictEqual(log[0].ma_trang_thai, 503);
+});

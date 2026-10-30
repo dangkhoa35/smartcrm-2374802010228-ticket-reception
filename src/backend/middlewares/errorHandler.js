@@ -2,8 +2,7 @@ const AppError = require('../utils/AppError');
 const { logger } = require('../utils/logger');
 
 // Mã lỗi cho biết CSDL/hạ tầng không với tới được -> 503 thay vì 500
-const MA_LOI_HA_TANG = new Set(['ECONNREFUSED', 'ECONNRESET', 'ETIMEDOUT', 'ENOTFOUND',
-  '57P01', '57P03', '08000', '08001', '08003', '08006']);
+const MA_LOI_HA_TANG = new Set(['ECONNREFUSED', 'ECONNRESET', 'ETIMEDOUT', 'ENOTFOUND', 'EAI_AGAIN', '57P01', '57P03', '08000', '08001', '08003', '08006']);
 
 const boiCanh = (req) => ({
   requestId: req.requestId,
