@@ -1,7 +1,7 @@
 # API CONTRACT – SMART CRM MEKONG MOBILE
 
 **Luồng nghiệp vụ:** L2 – Tiếp nhận và phân loại yêu cầu bảo hành  
-**Phiên bản:** 1.3 – Sprint 2 (buổi 10): thêm EP9, EP10, tham số `open` của EP5, `technician_id` của EP6, 3 mã lỗi mới (TD-09, mục 1.13); kế thừa v1.2 (24/10/2026: EP1–EP3, EP8, định dạng lỗi `fields`, TD-08), v1.1 (20/10/2026) và v1.0 của BT1 (xem mục 1.11, 1.12 và README mục 6, QĐ-4)  
+**Phiên bản:** 1.4 – Sprint 2 (buổi 11): thêm mã `503 LOI_HE_THONG` khi CSDL hoặc hạ tầng không với tới được (mục 1.14); kế thừa v1.3 (buổi 10): thêm EP9, EP10,  
 **Phạm vi:** US1–US7; không đặc tả US8 (Ghi chú trao đổi) theo TD-01.  
 **Cột "Hiện thực":** `Đã làm` = đã hiện thực trong Sprint 1–2; `Chưa làm` = đã thiết kế, chưa hiện thực.
 
@@ -42,7 +42,7 @@
 | `NHOM_SU_CO_KHONG_TON_TAI` | 422 | `category_id` không có trong danh mục nhóm sự cố. |
 | `CHUYEN_TRANG_THAI_KHONG_HOP_LE` | 422 | Chuyển trạng thái không nằm trong vòng đời cho phép (QT03). |
 | `XUNG_DOT_TRANG_THAI` | 409 | Trạng thái phiếu vừa bị người khác thay đổi trong lúc xử lý. |
-| `LOI_HE_THONG` | 500 | Lỗi không lường trước; giao dịch được rollback. `message` là câu chung kèm mã tra cứu (ghi log cùng mã), client không nhận chi tiết kỹ thuật. |
+| `LOI_HE_THONG` | 503 | CSDL hoặc hạ tầng không với tới được (ví dụ `ECONNREFUSED`, `ENOTFOUND`, `EAI_AGAIN`); cùng định dạng và `message` như lỗi 500, áp dụng cho mọi endpoint. Lỗi tạm thời, client nên cho người dùng bấm Thử lại. |
 | `SDT_DA_TON_TAI` | 409 | (EP2) Số điện thoại đã có hồ sơ khách hàng, kể cả khi hai yêu cầu cùng số được gửi đồng thời. |
 | `SERIAL_DA_TON_TAI` | 409 | (EP9) Số serial đã được đăng ký cho một thiết bị khác; kèm `fields.serial_no`. |
 | `NGUOI_PHE_DUYET_KHONG_HOP_LE` | 422 | (EP4) `approved_by` không tồn tại, không phải Quản lý trung tâm hoặc thuộc trung tâm khác (SRS 8a). |
@@ -519,3 +519,11 @@ x-role: NHAN_VIEN_TIEP_NHAN
 | EP4 `POST /api/tickets` | `approved_by` sai khóa ngoại trả `500` | Kiểm tra người phê duyệt: phải là Quản lý trung tâm cùng trung tâm, sai trả `422 NGUOI_PHE_DUYET_KHONG_HOP_LE` | Lỗi dữ liệu người dùng không được báo là lỗi hệ thống (A3, SRS 8a). |
 | EP6 `PATCH .../status` | Không ghi kỹ thuật viên | `DA_PHAN_CONG` bắt buộc `technician_id`, ghi vào phiếu; EP7 và EP5 trả thêm `technician_name` | Phân công mà phiếu không có kỹ thuật viên là sai nghiệp vụ (A4, C2). `employee` và `technician` là hai bảng không liên kết nên phải chọn kỹ thuật viên tường minh. Thay đổi **phá vỡ nhẹ**: gọi `DA_PHAN_CONG` không kèm `technician_id` nay bị `422`. |
 | EP9, EP10 | Chưa có | Thêm mới | Khách mới tạo chưa có thiết bị thì không tạo được phiếu (A2); giao diện cần danh sách kỹ thuật viên để phân công. |
+
+## 1.14. Thay đổi so với v1.3 (Sprint 2, buổi 11)
+
+| Nội dung | v1.3 | v1.4 | Lý do |
+|---|---|---|---|
+| Lỗi khi CSDL hoặc hạ tầng không với tới được (`ECONNREFUSED`, `ECONNRESET`, `ETIMEDOUT`, `ENOTFOUND`, `EAI_AGAIN`) | `500 LOI_HE_THONG` | `503 LOI_HE_THONG`, cùng định dạng và `message` kèm mã tra cứu | Phân biệt lỗi tạm thời (thử lại được) với lỗi bất ngờ trong mã. Giao diện xử lý cả hai bằng thông báo và nút Thử lại. Thay đổi **tương thích ngược**: mã `error` không đổi, client chỉ dựa vào `error` vẫn chạy đúng. |
+| Mã tra cứu trong lỗi 5xx | Có trong `message` | Là `requestId` của yêu cầu, cũng trả ở header `X-Request-Id`; mọi dòng nhật ký của yêu cầu mang cùng mã | Lần theo một yêu cầu từ màn hình đến nhật ký. |
+| Nhật ký | Văn bản thường | Một dòng JSON mỗi sự kiện ra stdout, che dữ liệu nhạy cảm | Đọc được bằng `docker compose logs api`. |
