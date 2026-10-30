@@ -1,0 +1,65 @@
+services:
+
+  db:
+    image: postgres:16-alpine
+    environment:
+      POSTGRES_DB:       ${DB_NAME}
+      POSTGRES_USER:     ${DB_USER}
+      POSTGRES_PASSWORD: ${DB_PASSWORD}
+    volumes:
+      - db_data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${DB_USER} -d ${DB_NAME}"]
+      interval: 5s
+      timeout: 3s
+      retries: 10
+    # Mặc định 5433 để KHÔNG đụng PostgreSQL cài sẵn trên máy (cổng 5432)
+    ports:
+      - "${DB_HOST_PORT:-5433}:5432"
+
+  # Chạy MỘT LẦN rồi thoát: tạo bảng + nạp dữ liệu mẫu (cả ba lệnh đều chạy lại được)
+  init:
+    build: .
+    image: smartcrm-api:local
+    command: ["sh", "-c", "node src/backend/db/migrate.js && node src/backend/db/seed.js && node src/backend/db/import-history.js"]
+    environment:
+      DATABASE_URL: postgres://${DB_USER}:${DB_PASSWORD}@db:5432/${DB_NAME}
+      DATASET_DIR: /data
+    volumes:
+      # Dữ liệu nguồn gắn vào chế độ CHỈ ĐỌC, không nằm trong ảnh Docker.
+      # Mặc định là bộ mẫu nhỏ trong repo; muốn nạp bộ đầy đủ: đặt DATASET_HOST_DIR=./data/raw
+      - ${DATASET_HOST_DIR:-./data/sample}:/data:ro
+    depends_on:
+      db:
+        condition: service_healthy
+    restart: "no"
+
+  api:
+    build: .
+    image: smartcrm-api:local
+    environment:
+      DATABASE_URL: postgres://${DB_USER}:${DB_PASSWORD}@db:5432/${DB_NAME}
+      PORT: 3000
+      CORS_ORIGIN: ${CORS_ORIGIN:-http://localhost:5173}
+      LOG_LEVEL: ${LOG_LEVEL:-info}
+    depends_on:
+      db:
+        condition: service_healthy                  # CSDL là BẮT BUỘC -> chờ healthy
+      init:
+        condition: service_completed_successfully   # chờ tạo bảng + nạp dữ liệu xong
+    ports:
+      - "${API_PORT:-3000}:3000"
+
+  web:
+    build:
+      context: ./src/frontend
+      args:
+        VITE_API_BASE_URL: ${PUBLIC_API_URL:-http://localhost:3000}
+    depends_on:
+      api:
+        condition: service_healthy
+    ports:
+      - "${WEB_PORT:-5173}:80"
+
+volumes:
+  db_data:

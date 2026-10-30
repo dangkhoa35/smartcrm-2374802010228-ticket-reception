@@ -1,0 +1,11 @@
+node_modules
+.git
+.env
+.env.*
+!.env.example
+src/frontend
+data/raw
+docs
+tests
+*.pdf
+*.log
