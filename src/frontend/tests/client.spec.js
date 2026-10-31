@@ -4,20 +4,19 @@ import { getSession, saveSession } from '../src/auth/session';
 
 const json = (status, body) => ({ ok: status < 400, status, json: async () => body });
 
-beforeEach(() => { localStorage.clear(); saveSession({ role: 'NHAN_VIEN_TIEP_NHAN', employeeId: 3, centerId: 2 }); });
+beforeEach(() => { localStorage.clear(); saveSession({ token: 'tok.en.abc', role: 'NHAN_VIEN_TIEP_NHAN', employeeId: 3, centerId: 2 }); });
 afterEach(() => vi.restoreAllMocks());
 
 describe('lớp gọi API', () => {
-  it('gửi header phiên làm việc và trả toàn bộ thân phản hồi (giữ paging)', async () => {
+  it('gửi token Bearer của phiên (không còn header x-role tự khai) và trả toàn bộ thân phản hồi (giữ paging)', async () => {
     const f = vi.fn().mockResolvedValue(json(200, { data: [1], paging: { total: 1 } }));
     vi.stubGlobal('fetch', f);
     const body = await request('/api/tickets');
     expect(body.paging.total).toBe(1);
     const [url, opts] = f.mock.calls[0];
     expect(url).toBe('http://api.test/api/tickets');
-    expect(opts.headers['x-role']).toBe('NHAN_VIEN_TIEP_NHAN');
-    expect(opts.headers['x-employee-id']).toBe('3');
-    expect(opts.headers['x-center-id']).toBe('2');
+    expect(opts.headers.Authorization).toBe('Bearer tok.en.abc');
+    expect(opts.headers['x-role']).toBeUndefined();
   });
 
   it('mất kết nối: không lộ "Failed to fetch", báo câu cho người dùng và cho phép thử lại', async () => {
@@ -56,5 +55,19 @@ describe('lớp gọi API', () => {
     window.removeEventListener('auth:unauthorized', handler);
     expect(getSession()).toBeNull();
     expect(handler).toHaveBeenCalledTimes(1);
+  });
+
+  it('chưa đăng nhập: không gửi header Authorization', async () => {
+    localStorage.clear();
+    const f = vi.fn().mockResolvedValue(json(200, { data: [] }));
+    vi.stubGlobal('fetch', f);
+    await request('/api/auth/centers');
+    expect(f.mock.calls[0][1].headers.Authorization).toBeUndefined();
+  });
+
+  it('phiên đã quá hạn: getSession trả null và xóa phiên (coi như chưa đăng nhập)', () => {
+    saveSession({ token: 't', role: 'QUAN_LY_TRUNG_TAM', employeeId: 1, centerId: 1, expiresAt: new Date(Date.now() - 1000).toISOString() });
+    expect(getSession()).toBeNull();
+    expect(localStorage.getItem('smartcrm.session')).toBeNull();
   });
 });

@@ -26,11 +26,8 @@ export async function request(path, { method = 'GET', body, headers = {} } = {})
       method,
       headers: {
         'Content-Type': 'application/json',
-        ...(session ? {
-          'x-role': session.role,
-          'x-employee-id': String(session.employeeId),
-          'x-center-id': String(session.centerId),
-        } : {}),
+        // Máy chủ lấy vai trò, mã nhân viên, trung tâm từ token này (đã ký), không tin header tự khai
+        ...(session?.token ? { Authorization: `Bearer ${session.token}` } : {}),
         ...headers,
       },
       body: body === undefined ? undefined : JSON.stringify(body),

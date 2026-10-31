@@ -7,9 +7,6 @@ export function SessionProvider({ children }) {
   const [session, setSession] = useState(() => getSession());
 
   const login = useCallback((s) => { saveSession(s); setSession(s); }, []);
-  const switchRole = useCallback((role) => {
-    setSession((prev) => { const next = { ...prev, role }; saveSession(next); return next; });
-  }, []);
   const logout = useCallback(() => { clearSession(); setSession(null); }, []);
 
   // Lớp gọi API phát sự kiện này khi nhận 401: xoá phiên và về trang đăng nhập.
@@ -18,7 +15,15 @@ export function SessionProvider({ children }) {
     return () => window.removeEventListener('auth:unauthorized', logout);
   }, [logout]);
 
-  const value = useMemo(() => ({ session, login, switchRole, logout }), [session, login, switchRole, logout]);
+  // Tự đăng xuất đúng lúc token hết hạn (không cần chờ lần gọi API kế tiếp bị 401)
+  useEffect(() => {
+    if (!session?.expiresAt) return undefined;
+    const ms = new Date(session.expiresAt).getTime() - Date.now();
+    const id = setTimeout(logout, Math.max(0, Math.min(ms, 2 ** 31 - 1)));
+    return () => clearTimeout(id);
+  }, [session, logout]);
+
+  const value = useMemo(() => ({ session, login, logout }), [session, login, logout]);
   return <SessionContext.Provider value={value}>{children}</SessionContext.Provider>;
 }
 

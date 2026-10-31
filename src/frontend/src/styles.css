@@ -56,3 +56,10 @@ th { background: var(--blue-soft); font-size: .85rem; }
 .actions { display: flex; gap: .75rem; justify-content: flex-end; margin-top: 1rem; }
 .ticket-head { font-size: 1.1rem; }
 @media (max-width: 480px) { .container { padding: .6rem; } .topbar { padding: .5rem .6rem; } }
+
+/* ===== Đăng nhập / đăng ký ===== */
+.demo-head { display: flex; justify-content: space-between; align-items: center; gap: .5rem; }
+.demo-head h2 { margin: 0; }
+.pw-row { display: flex; gap: .4rem; margin-top: .25rem; } .pw-row input { margin-top: 0; }
+.hint { display: block; font-size: .8rem; font-weight: 400; }
+.demo-table { min-width: 0; font-size: .85rem; } .demo-table th, .demo-table td { padding: .3rem .4rem; }

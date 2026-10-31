@@ -7,6 +7,8 @@ COPY . .
 # Địa chỉ API được "đóng" vào bản dựng lúc build (biến VITE_* chỉ có tác dụng lúc build)
 ARG VITE_API_BASE_URL
 ENV VITE_API_BASE_URL=$VITE_API_BASE_URL
+ARG VITE_SHOW_DEMO_ACCOUNTS=true
+ENV VITE_SHOW_DEMO_ACCOUNTS=$VITE_SHOW_DEMO_ACCOUNTS
 RUN npm run build
 
 # ---------- GIAI ĐOẠN 2: nginx phục vụ tệp tĩnh ----------
