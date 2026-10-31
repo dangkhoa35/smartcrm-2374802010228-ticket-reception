@@ -1,7 +1,7 @@
 # API CONTRACT – SMART CRM MEKONG MOBILE
 
 **Luồng nghiệp vụ:** L2 – Tiếp nhận và phân loại yêu cầu bảo hành  
-**Phiên bản:** 1.4 – Sprint 2 (buổi 11): thêm mã `503 LOI_HE_THONG` khi CSDL hoặc hạ tầng không với tới được (mục 1.14); kế thừa v1.3 (buổi 10): thêm EP9, EP10,  
+**Phiên bản:** 1.5 – BT2: thêm đăng nhập và đăng ký (EP11–EP13), xác thực bằng Bearer JWT thay header tạm (mục 1.15); kế thừa v1.4 – Sprint 2 (buổi 11): thêm mã `503 LOI_HE_THONG` khi CSDL hoặc hạ tầng không với tới được (mục 1.14); kế thừa v1.3 (buổi 10): thêm EP9, EP10,  
 **Phạm vi:** US1–US7; không đặc tả US8 (Ghi chú trao đổi) theo TD-01.  
 **Cột "Hiện thực":** `Đã làm` = đã hiện thực trong Sprint 1–2; `Chưa làm` = đã thiết kế, chưa hiện thực.
 
@@ -10,10 +10,10 @@
 | Mục | Quy ước |
 |---|---|
 | **Base URL** | `/api`; dữ liệu JSON UTF-8; yêu cầu có body dùng `Content-Type: application/json`. Đường dẫn kiểm tra sống: `GET /health` trả `{"status":"ok"}`. |
-| **Xác thực** | **Thiết kế đích:** `Authorization: Bearer <access_token>`, phiên hết hạn sau 30 phút (NFR2). **Sprint 1 (tạm thời):** chưa có đăng nhập; người thao tác được lấy từ 3 header: `x-role` (mặc định `NHAN_VIEN_TIEP_NHAN`), `x-employee-id` (mặc định `1`), `x-center-id` (mặc định `1`). Giá trị `x-role` không hợp lệ trả `401 CHUA_XAC_THUC`. Cơ chế Bearer sẽ thay thế ở BT2. |
+| **Xác thực** | `Authorization: Bearer <token>`; token là JWT (HS256) lấy từ EP11, **hết hạn sau 30 phút** (NFR2). Vai trò, `employee_id`, `center_id` của người thao tác lấy từ token do máy chủ ký, không nhận từ header hay body. Thiếu token hoặc token sai chữ ký trả `401 CHUA_XAC_THUC`, token hết hạn trả `401 PHIEN_HET_HAN`. Nhóm `/api/auth/*` (EP11–EP13) công khai, không cần token. Header `x-role`, `x-employee-id`, `x-center-id` của Sprint 1 **đã bỏ** (mục 1.15). |
 | **CORS** | Máy chủ chỉ cho phép trình duyệt từ nguồn đặt trong biến môi trường `CORS_ORIGIN` (mặc định `http://localhost:5173`, cổng của Vite). Công cụ như curl và Postman không bị ảnh hưởng. |
 | **Vai trò** | `NHAN_VIEN_TIEP_NHAN` (Nhân viên tiếp nhận), `QUAN_LY_TRUNG_TAM` (Quản lý trung tâm), `KY_THUAT_VIEN` (Kỹ thuật viên). Mỗi endpoint kiểm tra vai trò trước khi xử lý; sai vai trò trả `403 KHONG_DU_QUYEN`. |
-| **Phạm vi trung tâm** | Trung tâm của người thao tác (`center_id`) lấy từ phiên/header, **không nhận từ body**. Danh sách và chi tiết phiếu chỉ trả phiếu của trung tâm đó; phiếu của trung tâm khác trả `404 KHONG_TIM_THAY` để không tiết lộ dữ liệu. |
+| **Phạm vi trung tâm** | Trung tâm của người thao tác (`center_id`) lấy từ token đăng nhập, **không nhận từ body**. Danh sách và chi tiết phiếu chỉ trả phiếu của trung tâm đó; phiếu của trung tâm khác trả `404 KHONG_TIM_THAY` để không tiết lộ dữ liệu. |
 | **Tên trường** | `snake_case`, thống nhất với DDL: `customer_id`, `device_id`, `center_id`, `ticket_code`, `issue_desc`, `category_id`, `priority`, `due_date`. |
 | **Thời gian** | ISO 8601 theo UTC (hậu tố `Z`) ở Sprint 1, ví dụ `2026-10-20T10:37:19.199Z`. Ngày mua dùng `YYYY-MM-DD`. |
 | **Mã phiếu** | Máy chủ tự sinh, duy nhất, dạng `BH-XXXXXX/YYYY` (số lấy từ sequence `ticket_code_seq`, năm theo ngày tiếp nhận), ví dụ `BH-007801/2026`; client không tự cấp mã. |
@@ -26,13 +26,19 @@
 | **Chống gửi trùng** | `POST /api/tickets` nhận header `Idempotency-Key`. Gửi lại cùng khóa thì máy chủ trả lại phiếu đã tạo với `200 OK` thay vì tạo phiếu thứ hai. |
 | **Định dạng thành công** | Một đối tượng: `{"data": { ... }}`. Danh sách: `{"data": [ ... ], "paging": { ... }}`. |
 | **Định dạng lỗi** | Ba trường cố định: `{"error":"MA_LOI","message":"câu cho người đọc","fields":{"ten_truong":"thông báo"}}`. `error` là mã máy đọc, frontend rẽ nhánh theo trường này, không theo câu chữ của `message`. `fields` chỉ có khi lỗi kiểm tra dữ liệu (`400`), mỗi trường một thông báo tiếng Việt viết cho người dùng. Lỗi `500` có `message` kèm mã tra cứu để đối chiếu log, không bao giờ có chi tiết kỹ thuật. |
-| **Thứ tự kiểm tra** | (1) vai trò hợp lệ → 401; (2) vai trò được phép → 403; (3) kiểm tra dữ liệu đầu vào → 400; (3b) nếu `Idempotency-Key` đã dùng thì trả lại phiếu cũ với 200 và dừng; (4) thiết bị tồn tại và thuộc khách hàng → 422; (5) thiết bị chưa có phiếu mở → 409; (6) bảo hành/phê duyệt → 422; (7) nhóm sự cố tồn tại → 422; (8) ghi `ticket` và `ticket_status_log` trong một giao dịch. Khi lỗi, không để lại dữ liệu ghi dở. |
+| **Thứ tự kiểm tra** | (1) token hợp lệ và chưa hết hạn → 401; (2) vai trò được phép → 403; (3) kiểm tra dữ liệu đầu vào → 400; (3b) nếu `Idempotency-Key` đã dùng thì trả lại phiếu cũ với 200 và dừng; (4) thiết bị tồn tại và thuộc khách hàng → 422; (5) thiết bị chưa có phiếu mở → 409; (6) bảo hành/phê duyệt → 422; (7) nhóm sự cố tồn tại → 422; (8) ghi `ticket` và `ticket_status_log` trong một giao dịch. Khi lỗi, không để lại dữ liệu ghi dở. |
 
 ## 1.2. Danh mục mã lỗi
 
 | `error` | HTTP | Khi nào |
 |---|---|---|
-| `CHUA_XAC_THUC` | 401 | Vai trò/phiên không hợp lệ. |
+| `CHUA_XAC_THUC` | 401 | Thiếu token, token sai chữ ký hoặc không đúng định dạng. |
+| `PHIEN_HET_HAN` | 401 | Token đã quá hạn 30 phút; giao diện xoá phiên và về trang đăng nhập. |
+| `SAI_THONG_TIN_DANG_NHAP` | 401 | (EP11) Sai tên đăng nhập hoặc mật khẩu, hoặc tài khoản ngừng hoạt động: **cùng một câu** cho mọi nguyên nhân. |
+| `TAI_KHOAN_TAM_KHOA` | 429 | (EP11) Sai 5 lần liên tiếp, khoá 15 phút. |
+| `MA_DANG_KY_SAI` | 403 | (EP12) Vai trò Kỹ thuật viên/Quản lý nhập sai hoặc thiếu mã đăng ký; kèm `fields.registration_code`. |
+| `DANG_KY_VAI_TRO_BI_KHOA` | 403 | (EP12) Vai trò đó chưa được cấu hình mã đăng ký nên không mở đăng ký tự do. |
+| `TEN_DANG_NHAP_DA_TON_TAI` | 409 | (EP12) Tên đăng nhập đã có người dùng, kể cả hai yêu cầu đồng thời; kèm `fields.username`. |
 | `KHONG_DU_QUYEN` | 403 | Vai trò không được thực hiện thao tác. |
 | `DU_LIEU_KHONG_HOP_LE` | 400 | Thiếu hoặc sai trường, sai kiểu, ngoài khoảng cho phép, JSON hỏng. |
 | `KHONG_TIM_THAY` | 404 | Không có bản ghi (hoặc nằm ngoài trung tâm của người gọi), hoặc đường dẫn không tồn tại. |
@@ -63,6 +69,9 @@
 | EP8 | `GET` | `/api/issue-categories` | Danh mục nhóm sự cố cho ô chọn trên giao diện | Mọi vai trò hợp lệ | Hỗ trợ US2 / US4 | Đã làm |
 | EP9 | `POST` | `/api/customers/{customer_id}/devices` | Thêm thiết bị cho khách hàng (khách mới chưa có thiết bị vẫn tạo được phiếu) | Nhân viên tiếp nhận | Hỗ trợ US2 | Đã làm (buổi 10) |
 | EP10 | `GET` | `/api/technicians` | Kỹ thuật viên đang hoạt động của trung tâm, để chọn khi phân công | Kỹ thuật viên, Quản lý trung tâm | Hỗ trợ US6 | Đã làm (buổi 10) |
+| EP11 | `POST` | `/api/auth/login` | Đăng nhập, nhận token | Công khai | Hỗ trợ NFR2 | Đã làm (BT2) |
+| EP12 | `POST` | `/api/auth/register` | Đăng ký tài khoản | Công khai | Hỗ trợ NFR2 | Đã làm (BT2) |
+| EP13 | `GET` | `/api/auth/centers` | Danh sách trung tâm cho ô chọn ở trang đăng ký | Công khai | Hỗ trợ EP12 | Đã làm (BT2) |
 
 **Truy vết tổng quát:** US1 → FR1 → UC1; US2 → FR2 → UC2; US3 → FR3 → UC3; US4 → FR4 → UC4; US5 → FR5 → UC5; US6 → FR6 → UC6; US7 → FR7 → UC7.
 
@@ -82,9 +91,7 @@
 POST /api/tickets HTTP/1.1
 Content-Type: application/json
 Idempotency-Key: 8b4e3a22-9f11-4b55-a7c1-123456789abc
-x-role: NHAN_VIEN_TIEP_NHAN
-x-employee-id: 1
-x-center-id: 1
+Authorization: Bearer <token của Nhân viên tiếp nhận>
 
 {
   "customer_id": 34018,
@@ -208,8 +215,7 @@ Chưa hiện thực trong Sprint 1: client gửi `category_id`; máy chủ chỉ
 
 ```http
 GET /api/tickets?open=true&page=1&size=20 HTTP/1.1
-x-role: QUAN_LY_TRUNG_TAM
-x-center-id: 1
+Authorization: Bearer <token của Quản lý trung tâm>
 ```
 
 ### Response mẫu – `200 OK`
@@ -269,7 +275,7 @@ Trả chi tiết một phiếu, cùng các trường nối như một phần t�
 |---|---|
 | **Mục đích** | Chuyển trạng thái phiếu theo vòng đời và ghi một dòng vào `ticket_status_log` (trạng thái cũ, mới, thời điểm, người thực hiện, ghi chú) trong cùng giao dịch. |
 | **Body** | `to_status` bắt buộc (một trong 7 trạng thái); `note` tùy chọn, chuỗi tối đa 255 ký tự; `technician_id` **bắt buộc khi `to_status` = `DA_PHAN_CONG`** (kỹ thuật viên đang hoạt động, cùng trung tâm; lấy danh sách từ EP10), bỏ qua với trạng thái khác. |
-| **Quyền** | Chỉ `KY_THUAT_VIEN`. Người thực hiện lấy từ `x-employee-id`. |
+| **Quyền** | Chỉ `KY_THUAT_VIEN`. Người thực hiện lấy từ `employee_id` trong token. |
 | **Truy vết** | US6 → FR6 → UC6; QT03: không quay lại trạng thái trước, mỗi lần chuyển lưu thời điểm và người thực hiện. |
 
 ### Vòng đời trạng thái cho phép
@@ -290,9 +296,7 @@ Khi chuyển sang `DA_DONG` hoặc `DA_HUY`, máy chủ ghi `closed_at`.
 ```http
 PATCH /api/tickets/7801/status HTTP/1.1
 Content-Type: application/json
-x-role: KY_THUAT_VIEN
-x-employee-id: 2
-x-center-id: 1
+Authorization: Bearer <token của Kỹ thuật viên>
 
 {
   "to_status": "DA_PHAN_CONG",
@@ -348,7 +352,7 @@ Dùng cùng quy ước thành công `{"data": ...}` và định dạng lỗi ở
 
 ```http
 GET /api/customers?phone=%2B84781234918 HTTP/1.1
-x-role: NHAN_VIEN_TIEP_NHAN
+Authorization: Bearer <token của Nhân viên tiếp nhận>
 ```
 
 ```json
@@ -387,7 +391,7 @@ Ví dụ lỗi `400` (số điện thoại sai):
 ```http
 POST /api/customers HTTP/1.1
 Content-Type: application/json
-x-role: NHAN_VIEN_TIEP_NHAN
+Authorization: Bearer <token của Nhân viên tiếp nhận>
 
 { "full_name": "Nguyễn An", "phone": "0912 345 678", "address": "Cần Thơ" }
 ```
@@ -527,3 +531,37 @@ x-role: NHAN_VIEN_TIEP_NHAN
 | Lỗi khi CSDL hoặc hạ tầng không với tới được (`ECONNREFUSED`, `ECONNRESET`, `ETIMEDOUT`, `ENOTFOUND`, `EAI_AGAIN`) | `500 LOI_HE_THONG` | `503 LOI_HE_THONG`, cùng định dạng và `message` kèm mã tra cứu | Phân biệt lỗi tạm thời (thử lại được) với lỗi bất ngờ trong mã. Giao diện xử lý cả hai bằng thông báo và nút Thử lại. Thay đổi **tương thích ngược**: mã `error` không đổi, client chỉ dựa vào `error` vẫn chạy đúng. |
 | Mã tra cứu trong lỗi 5xx | Có trong `message` | Là `requestId` của yêu cầu, cũng trả ở header `X-Request-Id`; mọi dòng nhật ký của yêu cầu mang cùng mã | Lần theo một yêu cầu từ màn hình đến nhật ký. |
 | Nhật ký | Văn bản thường | Một dòng JSON mỗi sự kiện ra stdout, che dữ liệu nhạy cảm | Đọc được bằng `docker compose logs api`. |
+
+## 1.15. EP11–EP13 – Đăng nhập và đăng ký – Đã làm (BT2)
+
+Ba endpoint này **công khai**, gắn trước bước xác thực. Mã nguồn: `routes/auth.routes.js` → `services/auth.service.js` → `repositories/account.repository.js`.
+
+### EP11 – POST `/api/auth/login`
+
+| Mục | Nội dung |
+|---|---|
+| **Body** | `username` (không phân biệt hoa thường) và `password`, cả hai bắt buộc. **Không gửi vai trò**: vai trò là thuộc tính của tài khoản, máy chủ đọc từ CSDL và đưa vào token. |
+| **Thành công** | `200`: `{"data":{"token":"<JWT>","expires_at":"2026-10-30T08:30:00.000Z","user":{"employee_id":3,"full_name":"Quản lý Mẫu","username":"quanly","role":"QUAN_LY_TRUNG_TAM","center_id":1}}}`. Không bao giờ trả `password_hash`. |
+| **Lỗi** | `400 DU_LIEU_KHONG_HOP_LE` (thiếu trường, kèm `fields`); `401 SAI_THONG_TIN_DANG_NHAP`; `429 TAI_KHOAN_TAM_KHOA`. |
+| **Bảo mật** | Cùng một câu cho mọi nguyên nhân sai (không lộ tài khoản nào có thật); tên không tồn tại vẫn tốn một lần băm để không lộ qua thời gian phản hồi; sai 5 lần liên tiếp khoá 15 phút. |
+
+### EP12 – POST `/api/auth/register`
+
+| Mục | Nội dung |
+|---|---|
+| **Body** | `full_name` (2–120 ký tự), `username` (4–30 ký tự `a-z 0-9 . _`, tự chuyển thường), `password` (8–128 ký tự, có chữ và số), `role`, `center_id`, `registration_code` (chỉ bắt buộc với `KY_THUAT_VIEN` và `QUAN_LY_TRUNG_TAM`). |
+| **Thành công** | `201`: `{"data":{"employee_id":63,"full_name":"Lê Thị Bình","username":"binh.le","role":"KY_THUAT_VIEN","center_id":3}}`. Không tự đăng nhập; giao diện chuyển sang `/login`. |
+| **Lỗi** | `400 DU_LIEU_KHONG_HOP_LE` kèm `fields` theo từng trường (kể cả `center_id` không tồn tại); `403 MA_DANG_KY_SAI`; `403 DANG_KY_VAI_TRO_BI_KHOA`; `409 TEN_DANG_NHAP_DA_TON_TAI`. |
+| **Lưu trữ** | Mật khẩu băm `scrypt` với muối ngẫu nhiên; không lưu và không ghi log mật khẩu gốc. |
+
+### EP13 – GET `/api/auth/centers`
+
+`200`: `{"data":[{"center_id":1,"center_code":"TT01","center_name":"TTBH Quận 10","city":"TP. Hồ Chí Minh"}, ...]}`. Chỉ để đổ ô chọn trung tâm ở trang đăng ký.
+
+### Thay đổi so với v1.4 (BT2)
+
+| Nội dung | v1.4 | v1.5 | Lý do |
+|---|---|---|---|
+| Xác thực | 3 header tự khai `x-role`, `x-employee-id`, `x-center-id`; không mật khẩu | `Authorization: Bearer <JWT>`; mật khẩu; hết hạn 30 phút | TD-12. Header tự khai cho phép ai cũng giả làm Quản lý. Thay đổi **phá vỡ**: yêu cầu không token nay bị `401`; giao diện là bên gọi duy nhất nên đổi một lần. |
+| Bảng `employee` | `employee_id`, `full_name`, `role`, `center_id` | Thêm `username` (duy nhất), `password_hash`, `is_active`, `created_at` | Migration 003. 60 mã nhân viên của dữ liệu lịch sử không có tài khoản. |
+| Mã lỗi | 401 `CHUA_XAC_THUC` | Thêm `PHIEN_HET_HAN`, `SAI_THONG_TIN_DANG_NHAP`, `TAI_KHOAN_TAM_KHOA`, `MA_DANG_KY_SAI`, `DANG_KY_VAI_TRO_BI_KHOA`, `TEN_DANG_NHAP_DA_TON_TAI` | Giao diện rẽ nhánh theo mã lỗi (mục 1.2). |

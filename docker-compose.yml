@@ -42,6 +42,9 @@ services:
       PORT: 3000
       CORS_ORIGIN: ${CORS_ORIGIN:-http://localhost:5173}
       LOG_LEVEL: ${LOG_LEVEL:-info}
+      JWT_SECRET: ${JWT_SECRET:?Thiếu JWT_SECRET trong .env (sao chép từ .env.example)}
+      REGISTER_CODE_KY_THUAT_VIEN: ${REGISTER_CODE_KY_THUAT_VIEN:-}
+      REGISTER_CODE_QUAN_LY: ${REGISTER_CODE_QUAN_LY:-}
     depends_on:
       db:
         condition: service_healthy                  # CSDL là BẮT BUỘC -> chờ healthy
@@ -55,6 +58,7 @@ services:
       context: ./src/frontend
       args:
         VITE_API_BASE_URL: ${PUBLIC_API_URL:-http://localhost:3000}
+        VITE_SHOW_DEMO_ACCOUNTS: ${SHOW_DEMO_ACCOUNTS:-true}
     depends_on:
       api:
         condition: service_healthy

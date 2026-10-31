@@ -37,7 +37,7 @@ Có hai cách chạy. **Cách A (khuyến nghị)** không cần cài Node hay P
 | | Cách A – Docker | Cách B – chạy trực tiếp |
 |---|---|---|
 | Cần cài | Docker Desktop (Docker Compose v2) | Node.js **22 LTS** (xem `.nvmrc`), npm 10+, PostgreSQL **16** cổng 5432 |
-| Dữ liệu nạp | Bộ **mẫu nhỏ** trong `data/sample/` (có sẵn trong repo) | Bộ **đầy đủ** trong `data/raw/` (không commit) |
+| Dữ liệu nạp | Bộ **mẫu nhỏ** trong `data/sample/` (có sẵn trong repo) | Bộ **đầy đủ** trong `data/raw/` (không commit), hoặc bộ mẫu nhỏ nếu đặt `DATASET_DIR=data/sample` |
 | Biến môi trường | `.env` (xem `.env.example`) | `.env` và `src/frontend/.env` (xem hai tệp `.env.example`) |
 
 - Bộ dữ liệu đầy đủ của học phần đặt trong `data/raw/`; seed của bộ dữ liệu: `20260901`.
@@ -160,7 +160,7 @@ Cần Docker Desktop đang chạy. Dừng `npm run dev` (nếu có) để khỏi
 Copy-Item .env.example .env
 docker compose up -d --build
 ```
-Trên macOS/Linux/Git Bash, lệnh đầu là `cp .env.example .env`. Có thể giữ nguyên các giá trị mẫu trong `.env` để chạy thử trên máy cá nhân; muốn dùng mật khẩu riêng thì đổi `DB_PASSWORD` (không dùng ký tự `@ : / # ?`).
+Trên macOS/Linux/Git Bash, lệnh đầu là `cp .env.example .env`. Có thể giữ nguyên các giá trị mẫu trong `.env` để chạy thử trên máy cá nhân; muốn dùng mật khẩu riêng thì đổi `DB_PASSWORD` (không dùng ký tự `@ : / # ?`). `.env` còn phải có `JWT_SECRET` (khoá ký phiên đăng nhập, tối thiểu 16 ký tự): nếu `.env` cũ thiếu dòng này, `docker compose` dừng với thông báo "Thiếu JWT_SECRET"; chép dòng đó từ `.env.example`. Đăng nhập bằng một trong 3 tài khoản mẫu ở mục 6.1.
 
 Lần dựng đầu mất vài phút. Kiểm tra bằng `docker compose ps -a`: `db`, `api`, `web` phải ở trạng thái **healthy**; `init` (nạp dữ liệu một lần) ở trạng thái **Exited (0)** là bình thường.
 
@@ -183,79 +183,196 @@ docker compose down -v                 # dừng và xóa dữ liệu, dựng l�
 Thử nhanh (trong PowerShell dùng `curl.exe`):
 ```powershell
 curl.exe -s localhost:3000/health
-curl.exe -s "localhost:3000/api/tickets?size=2"
+$r = Invoke-RestMethod -Method Post -Uri http://localhost:3000/api/auth/login -ContentType "application/json" -Body '{"username":"quanly","password":"Quanly@123"}'
+Invoke-RestMethod "http://localhost:3000/api/tickets?size=2" -Headers @{ Authorization = "Bearer $($r.data.token)" }
+```
+Từ phiên bản này mọi API ngoài `/api/auth/*` đều cần token; gọi không token trả `401`.
+
+### Cách B – chạy trực tiếp trên máy (không dùng Docker)
+
+Cách này tự cài Node.js và PostgreSQL trên máy rồi chạy ba thành phần riêng: **PostgreSQL** (cổng 5432) ← **backend** (cổng 3000) ← **giao diện** (cổng 5173). Làm lần lượt từ Bước 0 đến Bước 9; mỗi bước có phép kiểm tra để biết đã xong đúng chưa. Mọi lệnh `npm` ở Bước 2–9 chạy **tại thư mục gốc của repo**, trừ khi ghi rõ `cd src/frontend`, vì `dotenv` đọc tệp `.env` ở thư mục đang đứng.
+
+> Đang chạy Docker (cách A)? Chạy `docker compose down` trước để nhả cổng 3000 và 5173. Cơ sở dữ liệu của Docker dùng cổng 5433 nên không đụng PostgreSQL cài trên máy ở cổng 5432.
+
+#### Bước 0 – Cài công cụ và kiểm tra phiên bản
+
+| Công cụ | Phiên bản | Cách cài |
+|---|---|---|
+| Git | bất kỳ bản mới | https://git-scm.com |
+| Node.js | **22 LTS** (ghi trong `.nvmrc`) | Windows/macOS: tải bản LTS 22 từ https://nodejs.org. Có `nvm`: chạy `nvm install 22` rồi `nvm use 22` |
+| npm | 10 trở lên (đi kèm Node 22) | không cần cài riêng |
+| PostgreSQL | **16**, cổng 5432 | Windows: bộ cài EnterpriseDB (https://www.postgresql.org/download/windows/), **ghi nhớ mật khẩu của tài khoản `postgres`** đặt lúc cài. macOS: `brew install postgresql@16` rồi `brew services start postgresql@16`. Ubuntu/Debian: `sudo apt install postgresql-16` (hoặc `postgresql`), dịch vụ tự chạy |
+
+Kiểm tra (mở terminal mới sau khi cài):
+```bash
+git --version
+node -v          # phải bắt đầu bằng v22
+npm -v           # 10.x trở lên
+psql --version   # psql (PostgreSQL) 16.x
+```
+Windows báo `psql` không tồn tại: thêm `C:\Program Files\PostgreSQL\16\bin` vào biến môi trường `Path`, hoặc mở **SQL Shell (psql)** trong Start Menu và dùng nó ở Bước 3.
+
+#### Bước 1 – Clone repository
+```bash
+git clone https://github.com/dangkhoa35/smartcrm-2374802010228-ticket-reception.git
+cd smartcrm-2374802010228-ticket-reception
+```
+Chấm bài theo tag nộp: thêm `--branch v0.2` vào lệnh `git clone`.
+
+#### Bước 2 – Cài thư viện
+Dùng `npm ci` (không dùng `npm install`) để đúng phiên bản trong `package-lock.json`:
+```bash
+npm ci
+npm ci --prefix src/frontend
+```
+Kiểm tra: không báo lỗi đỏ; xuất hiện thư mục `node_modules/` ở thư mục gốc và ở `src/frontend/`.
+
+#### Bước 3 – Tạo user và database trong PostgreSQL
+Mở `psql` bằng tài khoản quản trị:
+```bash
+psql -U postgres -h localhost          # Windows/macOS, nhập mật khẩu đặt lúc cài
+sudo -u postgres psql                  # Ubuntu/Debian
+```
+Trong dấu nhắc `postgres=#`, chạy (đổi `mat-khau-cua-ban`; **không dùng** các ký tự `@ : / # ?` vì mật khẩu sẽ nằm trong chuỗi kết nối):
+```sql
+CREATE USER smartcrm WITH PASSWORD 'mat-khau-cua-ban';
+CREATE DATABASE smartcrm OWNER smartcrm;
+\q
+```
+Kiểm tra đăng nhập bằng tài khoản mới (phải in ra một dòng `1`):
+```bash
+psql "postgresql://smartcrm:mat-khau-cua-ban@localhost:5432/smartcrm" -c "SELECT 1;"
 ```
 
-### Cách B – chạy trực tiếp trên máy
+#### Bước 4 – Tạo hai tệp cấu hình `.env`
+```bash
+cp .env.example .env
+cp src/frontend/.env.example src/frontend/.env
+```
+Windows PowerShell: thay `cp` bằng `Copy-Item` (cú pháp `Copy-Item <nguồn> <đích>`).
 
-1. **Clone repository:**
-   ```bash
-   git clone https://github.com/dangkhoa35/smartcrm-2374802010228-ticket-reception.git
-   cd smartcrm-2374802010228-ticket-reception
-   ```
+Mở **`.env`** ở thư mục gốc. Cách B chỉ dùng các dòng sau; các biến `DB_*`, `API_PORT`, `WEB_PORT`, `PUBLIC_API_URL` là của Docker, có thể để nguyên:
+```env
+PORT=3000
+DATABASE_URL=postgresql://smartcrm:mat-khau-cua-ban@localhost:5432/smartcrm
+CORS_ORIGIN=http://localhost:5173
+DATASET_DIR=data/sample
+JWT_SECRET=doi_khoa_bi_mat_nay_toi_thieu_16_ky_tu
+REGISTER_CODE_KY_THUAT_VIEN=KTV-2026
+REGISTER_CODE_QUAN_LY=QL-2026
+```
+- `DATABASE_URL`: thay `doi_mat_khau_nay` bằng đúng mật khẩu đã đặt ở Bước 3.
+- `DATASET_DIR=data/sample`: dòng này trong `.env.example` đang bị comment (`# DATASET_DIR=...`); **xóa dấu `#`** và đặt giá trị như trên để nạp bộ mẫu nhỏ có sẵn trong repo (xem Bước 5).
+- `CORS_ORIGIN` phải đúng địa chỉ mở giao diện, mặc định `http://localhost:5173`.
+- `JWT_SECRET`: **bắt buộc**, tối thiểu 16 ký tự; backend dùng để ký mã phiên đăng nhập. Thiếu hoặc quá ngắn thì đăng nhập báo "Hệ thống đang gặp sự cố" và log backend ghi rõ lý do. Khi triển khai thật hãy đặt chuỗi ngẫu nhiên của riêng bạn.
+- `REGISTER_CODE_KY_THUAT_VIEN`, `REGISTER_CODE_QUAN_LY`: mã đăng ký cho hai vai trò quyền cao (mục 6.1). Để trống thì không ai tự đăng ký được vai trò đó.
 
-2. **Cài thư viện** (dùng `npm ci` để đúng phiên bản trong `package-lock.json`):
-   ```bash
-   npm ci
-   npm ci --prefix src/frontend
-   ```
+Tệp **`src/frontend/.env`** chỉ cần một dòng (đã có sẵn khi sao chép):
+```env
+VITE_API_BASE_URL=http://localhost:3000
+```
+Không commit hai tệp `.env` này (đã nằm trong `.gitignore`).
 
-3. **Tạo user và database trong PostgreSQL** (mở `psql` bằng tài khoản `postgres`):
-   ```sql
-   CREATE USER smartcrm WITH PASSWORD 'mat-khau-cua-ban';
-   CREATE DATABASE smartcrm OWNER smartcrm;
-   ```
+#### Bước 5 – Chọn bộ dữ liệu
+| | Bộ mẫu nhỏ (khuyến nghị) | Bộ đầy đủ của học phần |
+|---|---|---|
+| Vị trí | `data/sample/` (có sẵn trong repo) | `data/raw/` (không commit, tự tải từ trang học phần, mục "Mekong Mobile – Dataset Smart CRM") |
+| Cấu hình | `DATASET_DIR=data/sample` | để comment `DATASET_DIR`, hoặc `DATASET_DIR=data/raw` |
+| Số dòng sau khi nạp | 6 trung tâm, 6 nhóm sự cố, 38 kỹ thuật viên; 298 khách, 300 thiết bị, 300 phiếu, 1.448 dòng lịch sử | 6 / 6 / 38 / 60 mã nhân viên; 6.443 khách, 7.800 thiết bị, 7.800 phiếu, 38.112 dòng lịch sử |
 
-4. **Cấu hình biến môi trường:** sao chép `.env.example` thành `.env` rồi điền mật khẩu thật vào dòng `DATABASE_URL`.
-   ```powershell
-   Copy-Item .env.example .env
-   Copy-Item src/frontend/.env.example src/frontend/.env
-   ```
-   Trên macOS/Linux/Git Bash dùng `cp`. Phần dùng cho cách B trong `.env`:
-   ```env
-   PORT=3000
-   DATABASE_URL=postgresql://smartcrm:mat-khau-cua-ban@localhost:5432/smartcrm
-   CORS_ORIGIN=http://localhost:5173
-   ```
-   và trong `src/frontend/.env`: `VITE_API_BASE_URL=http://localhost:3000`.
+Cả hai bộ cần đủ 7 tệp: `service_centers.csv`, `issue_categories.csv`, `technicians.csv`, `products.csv`, `customers_raw.csv`, `tickets_history.csv`, `ticket_status_log.csv`. Thiếu tệp thì lệnh ở Bước 6 báo `Không thấy <tên tệp>`.
 
-5. **Đặt bộ dữ liệu mẫu** vào `data/raw/` (tải từ trang học phần, mục "Mekong Mobile – Dataset Smart CRM"). Cần 7 tệp: `service_centers.csv`, `issue_categories.csv`, `technicians.csv`, `products.csv`, `customers_raw.csv`, `tickets_history.csv`, `ticket_status_log.csv`.
+#### Bước 6 – Tạo bảng và nạp dữ liệu
+Chạy **đúng thứ tự**, mỗi lệnh phải kết thúc không lỗi rồi mới chạy lệnh sau:
+```bash
+npm run migrate          # tạo 8 bảng theo DDL, thêm cột đăng nhập (migration 001–003; ghi tệp đã chạy vào schema_migrations)
+npm run seed             # danh mục: trung tâm, nhóm sự cố, kỹ thuật viên, mã nhân viên và 3 tài khoản mẫu
+npm run import:history   # khách, thiết bị, phiếu, lịch sử trạng thái
+```
+Kiểm tra số dòng bằng `psql` (đối chiếu với bảng ở Bước 5):
+```bash
+psql "postgresql://smartcrm:mat-khau-cua-ban@localhost:5432/smartcrm" -c "SELECT (SELECT count(*) FROM customer) AS khach, (SELECT count(*) FROM device) AS thiet_bi, (SELECT count(*) FROM ticket) AS phieu, (SELECT count(*) FROM ticket_status_log) AS lich_su;"
+```
+Cả ba lệnh **chạy lại được** mà không nhân đôi dữ liệu. Muốn nạp lại dữ liệu phiếu từ đầu: `npm run import:history -- --reset`. Cuối lệnh `import:history` có in cặp `device_id` / `customer_id` để thử `POST /api/tickets`.
 
-6. **Tạo bảng và nạp dữ liệu** (chạy theo đúng thứ tự):
-   ```bash
-   npm run migrate          # tạo 8 bảng theo DDL
-   npm run seed             # danh mục: 6 trung tâm, 6 nhóm sự cố, 38 kỹ thuật viên, 60 mã nhân viên
-   npm run import:history   # dữ liệu thử: 6.443 khách, 7.800 thiết bị, 7.800 phiếu, 38.112 dòng lịch sử
-   ```
-   Cả ba lệnh chạy lại được. Muốn nạp lại dữ liệu phiếu từ đầu: `npm run import:history -- --reset`.
+#### Bước 7 – Chạy backend
+```bash
+npm run dev              # tự khởi động lại khi sửa mã; dùng npm start nếu không cần tự khởi động lại
+```
+Giữ terminal này mở. Mở terminal thứ hai và kiểm tra:
+```bash
+curl -s localhost:3000/health          # {"status":"ok"}
+curl -s -o /dev/null -w "%{http_code}\n" "localhost:3000/api/tickets?size=2"   # 401: chưa có token, đúng như thiết kế
+```
+Trong PowerShell dùng `curl.exe` thay cho `curl`. Terminal backend in mỗi yêu cầu thành một dòng JSON có `requestId`.
 
-7. **Chạy backend và kiểm thử:**
-   ```bash
-   npm run dev              # http://localhost:3000
-   npm test                 # 58 test backend (node --test)
-   ```
+#### Bước 8 – Chạy giao diện
+Ở terminal thứ hai (backend vẫn phải đang chạy):
+```bash
+cd src/frontend
+npm run dev              # http://localhost:5173
+```
+Mở **http://localhost:5173** (đúng cổng này, vì CORS chỉ cho phép `CORS_ORIGIN`). Ở màn `/login` đăng nhập bằng một tài khoản mẫu; vai trò do tài khoản quyết định, không phải chọn. Bấm **Xem** ở khung "Tài khoản dùng thử" để mở bảng tài khoản và nút **Điền sẵn** (bảng đầy đủ ở mục 6.1):
+- **Nhân viên tiếp nhận** (`tiepnhan`): tạo phiếu bảo hành mới (`/tickets/new`).
+- **Kỹ thuật viên** (`kythuatvien`): đổi trạng thái và phân công trên màn chi tiết phiếu.
+- **Quản lý trung tâm** (`quanly`): xem số điện thoại đầy đủ và phê duyệt.
 
-8. **Chạy giao diện** (mở cửa sổ terminal khác; backend phải đang chạy):
-   ```bash
-   cd src/frontend
-   npm run dev              # http://localhost:5173
-   npm test                 # test giao diện (vitest)
-   npm run build            # bản dựng sản xuất vào src/frontend/dist/
-   ```
-   Màn đăng nhập hiện chỉ chọn vai trò, mã nhân viên và mã trung tâm (xem mục 6.1). Mã nhân viên phải là mã có thật trong bảng `employee` (mặc định `1`). Muốn chuyển trạng thái phiếu thì chọn vai trò Kỹ thuật viên ở thanh đầu trang; muốn tạo phiếu thì chọn Nhân viên tiếp nhận.
+Chưa có tài khoản riêng? Bấm **Đăng ký** ở màn đăng nhập.
 
-9. **Gọi thử API** (Git Bash hoặc Postman; trong PowerShell dùng `curl.exe`):
-   ```bash
-   curl -s localhost:3000/health
-   curl -s "localhost:3000/api/tickets?status=DANG_XU_LY&size=3"
-   curl -s localhost:3000/api/issue-categories
-   curl -i -s -X POST localhost:3000/api/tickets -H "Content-Type: application/json" -d '{"issue_desc":""}'
-   ```
-   Kết quả mong đợi: `{"status":"ok"}`; danh sách phiếu kèm `paging`, số điện thoại đã che; danh mục nhóm sự cố; `400 DU_LIEU_KHONG_HOP_LE` kèm `fields` theo từng trường. Đặc tả đầy đủ: [`docs/diagrams/api-contract.md`](docs/diagrams/api-contract.md).
+#### Bước 9 – Chạy kiểm thử
+Kiểm thử **không cần PostgreSQL hay backend đang chạy**:
+```bash
+npm test                          # tại thư mục gốc: 78 test backend (node --test)
+npm test --prefix src/frontend    # 48 test giao diện (vitest)
+```
+Kết quả đúng: backend `pass 78`, `fail 0`; giao diện `Tests 48 passed (48)`. Bản dựng sản xuất của giao diện: `npm run build --prefix src/frontend` (ra `src/frontend/dist/`).
 
-   Trong PowerShell, gửi JSON bằng tệp để tránh lỗi dấu nháy: `curl.exe -i -s -X POST localhost:3000/api/tickets -H "Content-Type: application/json" --data-binary "@body.json"`.
+#### Gọi thử API bằng curl / Postman
+```bash
+# 1) Đăng nhập, lấy token (Bash; cần Node để tách token)
+TOKEN=$(curl -s -X POST localhost:3000/api/auth/login -H "Content-Type: application/json" \
+  -d '{"username":"quanly","password":"Quanly@123"}' \
+  | node -pe 'JSON.parse(require("fs").readFileSync(0)).data.token')
 
-   Người thao tác ở API hiện lấy từ header tạm `x-role`, `x-employee-id`, `x-center-id` (mặc định: tiếp nhận, mã 1, trung tâm 1). Cuối lệnh `import:history` có in sẵn cặp `device_id`/`customer_id` để thử `POST /api/tickets`.
+# 2) Gọi API kèm token
+curl -s localhost:3000/health
+curl -s "localhost:3000/api/tickets?status=DANG_XU_LY&size=3" -H "Authorization: Bearer $TOKEN"
+curl -s localhost:3000/api/issue-categories -H "Authorization: Bearer $TOKEN"
+curl -i -s -X POST localhost:3000/api/tickets -H "Authorization: Bearer $TOKEN" -H "Content-Type: application/json" -d '{"issue_desc":""}'
+```
+PowerShell:
+```powershell
+$r = Invoke-RestMethod -Method Post -Uri http://localhost:3000/api/auth/login -ContentType "application/json" -Body '{"username":"quanly","password":"Quanly@123"}'
+$h = @{ Authorization = "Bearer $($r.data.token)" }
+Invoke-RestMethod "http://localhost:3000/api/tickets?status=DANG_XU_LY&size=3" -Headers $h
+```
+Postman: gọi `POST /api/auth/login`, chép `data.token`, rồi ở tab Authorization của yêu cầu sau chọn **Bearer Token** và dán vào. Token hết hạn sau 30 phút.
+Kết quả mong đợi: `{"status":"ok"}`; danh sách phiếu kèm `paging` (số điện thoại đầy đủ với Quản lý, đã che với vai trò khác); danh mục nhóm sự cố; `400 DU_LIEU_KHONG_HOP_LE` kèm `fields` theo từng trường. Đặc tả đầy đủ: [`docs/diagrams/api-contract.md`](docs/diagrams/api-contract.md).
+
+Trong PowerShell, gửi JSON bằng tệp để tránh lỗi dấu nháy: `curl.exe -i -s -X POST localhost:3000/api/tickets -H "Content-Type: application/json" --data-binary "@body.json"`.
+
+Vai trò, mã nhân viên và trung tâm của người gọi lấy **từ token do máy chủ ký**, không còn header `x-role` tự khai (header cũ bị bỏ qua và yêu cầu không token bị `401`).
+
+#### Dừng và dọn dẹp
+- Dừng backend hoặc giao diện: nhấn `Ctrl + C` trong terminal tương ứng.
+- Nạp lại dữ liệu phiếu từ đầu: `npm run import:history -- --reset`.
+- Xóa sạch cơ sở dữ liệu để làm lại từ Bước 3: trong `psql -U postgres` chạy `DROP DATABASE smartcrm;` rồi `DROP USER smartcrm;`.
+
+#### Lỗi thường gặp riêng của cách B
+| Thông báo / triệu chứng | Nguyên nhân và cách xử lý |
+|---|---|
+| `psql` không được nhận diện | Chưa có trong `Path`; dùng SQL Shell (psql) hoặc thêm thư mục `bin` của PostgreSQL vào `Path` (Bước 0) |
+| `ECONNREFUSED 127.0.0.1:5432` | PostgreSQL chưa chạy. Windows: `services.msc` → dịch vụ `postgresql-x64-16` → Start. macOS: `brew services start postgresql@16`. Linux: `sudo systemctl start postgresql` |
+| `password authentication failed for user "smartcrm"` | Mật khẩu trong `DATABASE_URL` khác mật khẩu ở Bước 3. Đặt lại: `ALTER USER smartcrm WITH PASSWORD '...';` trong `psql -U postgres` |
+| `database "smartcrm" does not exist` | Chưa chạy `CREATE DATABASE` ở Bước 3, hoặc `DATABASE_URL` ghi sai tên |
+| `Cannot find module 'dotenv'` / `Cannot find package` | Chưa chạy `npm ci` (Bước 2), hoặc chạy lệnh sai thư mục |
+| `getaddrinfo ENOTFOUND db` | `DATABASE_URL` còn dùng tên máy `db` của Docker; đổi thành `localhost` |
+| `Không thấy ...csv` khi `seed` hoặc `import:history` | Thiếu tệp CSV, hoặc `DATASET_DIR` trống nên script tìm ở `data/raw/`. Đặt `DATASET_DIR=data/sample` (xóa dấu `#`) |
+| `relation "ticket" does not exist` | Chưa chạy `npm run migrate`, hoặc `DATABASE_URL` trỏ nhầm database |
+| `EADDRINUSE :::3000` | Cổng 3000 đang bị chiếm, thường là container `api` của Docker: chạy `docker compose down`, hoặc đổi `PORT` trong `.env` (và `VITE_API_BASE_URL` cho khớp) |
+| Giao diện báo "Chưa cấu hình địa chỉ máy chủ" | Chưa có `src/frontend/.env`; sao chép từ `.env.example` rồi chạy lại `npm run dev` (biến `VITE_*` chỉ đọc lúc khởi động) |
+| Giao diện báo "Không kết nối được tới hệ thống" | Backend chưa chạy, hoặc mở giao diện ở cổng khác 5173 (bị CORS chặn). Mở đúng http://localhost:5173 |
+| Danh sách phiếu trống trơn | Chưa chạy `npm run import:history`; kiểm tra số dòng bằng lệnh `psql` ở Bước 6 |
 
 ### Lỗi môi trường thường gặp
 
@@ -268,7 +385,10 @@ curl.exe -s "localhost:3000/api/tickets?size=2"
 | `port is already allocated` khi `docker compose up` | Tắt `npm run dev` và Vite đang chạy, hoặc đổi `API_PORT`, `WEB_PORT`, `DB_HOST_PORT` trong `.env` |
 | Giao diện báo "Không kết nối được tới hệ thống" | Mở đúng http://localhost:5173 (Docker). Trang ở cổng khác (ví dụ 5174 của Vite dev) bị API chặn theo CORS vì `CORS_ORIGIN` chỉ cho phép 5173. Nếu đúng cổng mà vẫn lỗi: kiểm tra `docker compose ps -a` và `VITE_API_BASE_URL`/`PUBLIC_API_URL` |
 | Giao diện báo "Chưa cấu hình địa chỉ máy chủ" (cách B) | Chưa có `src/frontend/.env`; sao chép từ `.env.example` rồi chạy lại `npm run dev` |
-| Thao tác ghi báo "Hệ thống đang gặp sự cố" | Mã nhân viên ở màn đăng nhập phải có trong bảng `employee`; tra mã hiện trên màn hình trong log: `docker compose logs api` (hoặc log backend ở cách B) |
+| Đăng nhập báo "Hệ thống đang gặp sự cố" | Thường do thiếu hoặc quá ngắn `JWT_SECRET`; tra mã hiện trên màn hình trong log: `docker compose logs api` (hoặc log backend ở cách B) |
+| `Thiếu JWT_SECRET trong .env` khi `docker compose up` | `.env` cũ chưa có dòng `JWT_SECRET`; chép từ `.env.example` |
+| "Sai tên đăng nhập hoặc mật khẩu" dù nhập đúng | Tài khoản mẫu chỉ có sau `npm run seed`; kiểm tra đã chạy `seed` và đúng mật khẩu ở mục 6.1 |
+| "Nhập sai quá nhiều lần" (429) | Sai 5 lần liên tiếp bị khoá 15 phút; khởi động lại backend để xoá khoá khi đang thử nghiệm |
 | `docker compose logs init` báo `Không thấy /data/service_centers.csv` | Thư mục `data/sample/` đang trống hoặc không có. Chạy `node scripts/make-sample.js` (cần `data/raw/`), rồi `docker compose up -d` |
 | `failed to solve ... read-only file system` | Lỗi của Docker Desktop, không phải của dự án: ổ chứa dữ liệu Docker đầy hoặc WSL bị treo. Giải phóng ổ đĩa (hoặc đổi nơi lưu ở Settings > Resources > Advanced), `wsl --shutdown`, mở lại Docker Desktop |
 | `failed to calculate checksum ... "/app/node_modules": not found` khi dựng | Chạy `docker builder prune -af` rồi `docker compose up -d --build` |
@@ -292,17 +412,27 @@ curl.exe -s "localhost:3000/api/tickets?size=2"
 - [x] **Buổi 11:** bộ dữ liệu mẫu nhỏ `data/sample/` có trong repo; `.env.example` liệt kê đủ biến; tệp khoá `package-lock.json` ở cả hai gói; `.nvmrc` ghi phiên bản Node
 - [x] **Buổi 11:** nhật ký JSON ra stdout có `requestId`, che dữ liệu nhạy cảm; một bộ xử lý lỗi duy nhất (lỗi nghiệp vụ ghi INFO, lỗi hệ thống ghi ERROR một lần kèm mã tra cứu); mất kết nối CSDL trả `503` (mục 6.3)
 - [x] **Buổi 11:** `docs/bug-log.md` ghi 3 lỗi đã gỡ, mỗi lỗi có test hồi quy FAIL trước, PASS sau
-- [x] 58 unit test backend (`npm test` ở thư mục gốc) và 36 test giao diện (`npm test` trong `src/frontend`), gồm luồng đúng, giá trị biên, dữ liệu sai và luồng lỗi 409/422/503
-- [ ] Đăng nhập thật (hiện chọn vai trò, xem mục 6.1) – dự kiến BT2 (TD-12)
+- [x] 78 test backend (`npm test` ở thư mục gốc) và 48 test giao diện (`npm test` trong `src/frontend`), gồm luồng đúng, giá trị biên, dữ liệu sai và luồng lỗi 409/422/503
+- [x] Đăng nhập / đăng ký thật: mật khẩu băm scrypt, phiên JWT 30 phút, 3 vai trò, tài khoản mẫu (xem mục 6.1 và TD-12)
 - [ ] Đề xuất nhóm sự cố từ mô tả (US4) – hoãn (TD-10)
 - [ ] Lọc `overdue`/`assignee_id`/serial; lịch sử trạng thái trên màn chi tiết; lịch sử thiết bị và cảnh báo lỗi lặp lại (US7) – hoãn (TD-11)
 
-### 6.1. Xác thực tạm thời và hạn chế đã biết
+### 6.1. Đăng nhập, đăng ký và hạn chế đã biết
 
-- **Cách làm:** người dùng chọn vai trò, mã nhân viên và mã trung tâm ở màn `/login`; giao diện lưu trong `localStorage` và gửi lên backend qua ba header `x-role`, `x-employee-id`, `x-center-id` (đúng cơ chế tạm thời ở `api-contract.md` mục 1.1).
-- **Hạn chế:** không có mật khẩu, người dùng tự chọn vai trò; `localStorage` đọc được nếu trang có lỗ hổng chèn mã (XSS). Chấp nhận ở mức prototype vì giao diện không hiển thị nội dung HTML do người dùng nhập.
+**Tài khoản mẫu** (tạo bởi `npm run seed`, mỗi vai trò một tài khoản riêng; chỉ để chạy thử và chấm bài):
+
+| Vai trò | Tên đăng nhập | Mật khẩu |
+|---|---|---|
+| Nhân viên tiếp nhận | `tiepnhan` | `Tiepnhan@123` |
+| Kỹ thuật viên | `kythuatvien` | `Kythuat@123` |
+| Quản lý trung tâm | `quanly` | `Quanly@123` |
+
+- **Đăng nhập (`/login`):** chỉ nhập tên đăng nhập và mật khẩu (EP11); vai trò là của tài khoản (chọn lúc đăng ký), đăng nhập xong thanh đầu trang hiện tên và vai trò. Sai tên hoặc sai mật khẩu đều trả cùng một câu để không lộ tài khoản nào có thật. Khung "Tài khoản dùng thử" mặc định thu gọn, bấm **Xem** để mở. Sai 5 lần liên tiếp thì khoá tài khoản đó 15 phút (429).
+- **Đăng ký (`/register`):** họ tên, tên đăng nhập (4–30 ký tự chữ thường không dấu, số, `.`, `_`), mật khẩu (tối thiểu 8 ký tự, có chữ và số), vai trò, trung tâm (EP12, EP13). Nhân viên tiếp nhận đăng ký tự do; **Kỹ thuật viên và Quản lý trung tâm cần mã đăng ký** (`REGISTER_CODE_KY_THUAT_VIEN`, `REGISTER_CODE_QUAN_LY` trong `.env`; mẫu `KTV-2026`, `QL-2026`). Để trống mã nào thì vai trò đó không đăng ký tự do được, tránh ai cũng tự cấp quyền Quản lý.
+- **Phiên:** máy chủ ký JWT (HS256) hết hạn sau 30 phút (NFR2); giao diện gửi `Authorization: Bearer <token>` và tự đăng xuất khi hết hạn hoặc khi API trả `401`. Vai trò, mã nhân viên, trung tâm do **token** quyết định, nên sửa `localStorage` không nâng được quyền.
+- **Mật khẩu:** lưu dạng băm `scrypt` có muối ngẫu nhiên; không ghi mật khẩu vào log.
+- **Hạn chế đã biết:** token lưu trong `localStorage` (đọc được nếu trang có lỗ hổng XSS; hướng cải tiến là cookie `httpOnly`); bộ đếm khoá đăng nhập nằm trong bộ nhớ nên mất khi khởi động lại backend và có thể bị lợi dụng để khoá tài khoản người khác; chưa có đổi/quên mật khẩu và chưa có trang quản trị tài khoản; 60 mã nhân viên của dữ liệu lịch sử không có tài khoản. Trước khi triển khai thật: đổi `JWT_SECRET`, xoá hoặc đổi mật khẩu 3 tài khoản mẫu, đặt `SHOW_DEMO_ACCOUNTS=false`.
 - **Khi API trả `401`:** lớp gọi API xóa phiên và chuyển về `/login`.
-- **Thiết kế đích:** JWT Bearer, thay `src/frontend/src/auth/` và hàm `request()` ở BT2; các màn hình giữ nguyên.
 - Một số quy tắc trên giao diện (nhãn tình trạng bảo hành lúc chọn thiết bị, danh sách trạng thái kế tiếp) chỉ để gợi ý; máy chủ luôn là nơi quyết định và trả lỗi `422` nếu sai.
 
 ### 6.2. Màn hình, câu hỏi người dùng và ngữ cảnh so sánh
@@ -312,7 +442,8 @@ curl.exe -s "localhost:3000/api/tickets?size=2"
 | Danh sách phiếu `/tickets` | "Hôm nay tôi phải xử lý phiếu nào trước?" | Mặc định "Đang mở" (ẩn phiếu đã đóng/hủy), sắp theo hạn cam kết tăng dần, tô đỏ phiếu quá hạn, đếm số phiếu quá hạn của trang và tổng số phiếu | EP5 |
 | Tạo phiếu `/tickets/new` | "Thiết bị này tiếp nhận được chưa, hạn bảo hành thế nào?" | Ngày mua, số tháng bảo hành và tình trạng bảo hành hiện ngay khi chọn thiết bị; khách chưa có thiết bị thì thêm ngay tại màn này | EP1, EP2, EP3, EP9, EP8, EP4 |
 | Chi tiết phiếu `/tickets/:id` | "Phiếu này đang ở đâu, ai phụ trách, còn bao lâu đến hạn?" | Hạn cam kết kèm "Quá hạn N ngày" hoặc "Còn N giờ"; tên kỹ thuật viên; chọn kỹ thuật viên khi phân công | EP7, EP6, EP10 |
-| Đăng nhập `/login` | Chọn vai trò làm việc | Không áp dụng | Không gọi API |
+| Đăng nhập `/login` | "Tôi vào hệ thống bằng tài khoản nào?" | Tên đăng nhập, mật khẩu; lỗi chung một câu; khung tài khoản dùng thử thu gọn, bấm để mở | EP11 |
+| Đăng ký `/register` | "Tôi tự tạo tài khoản thế nào?" | Lỗi hiện cạnh từng ô; ô mã đăng ký chỉ hiện với vai trò quyền cao; danh sách trung tâm có đủ ba trạng thái | EP12, EP13 |
 
 Cả ba màn hình có dữ liệu đều xử lý đủ: đang tải (khung chờ), rỗng (lời giải thích kèm hành động, ví dụ nút Xóa bộ lọc), lỗi (câu giải thích kèm nút Thử lại khi lỗi tạm thời).
 
@@ -391,6 +522,7 @@ Giao diện xử lý được cả hai trường hợp 5xx: hiện thông báo l
 | **Claude** | Buổi 11 – nhật ký và xử lý lỗi (`utils/logger.js`, `middlewares/errorHandler.js`, `app.js`, `server.js`, `tests/logger.test.js`, `tests/errorHandler.test.js`, `tests/server.test.js`) | Nhờ soạn logger JSON có `requestId`, bộ xử lý lỗi duy nhất và test | Em chạy `npm test` (58 test đạt); đọc log thật khi chạy và phát hiện 3 lỗi (BUG-001 đến BUG-003 trong `docs/bug-log.md`); với mỗi lỗi, chạy test thấy FAIL trước khi sửa, PASS sau khi sửa; thử tắt `api` và `db` để thấy giao diện hiện lỗi kèm nút Thử lại và API trả 503 kèm mã tra cứu khớp log. |
 | **Claude** | Buổi 11 – dữ liệu mẫu nhỏ (`scripts/make-sample.js`, `data/sample/`) | Nhờ soạn script cắt bộ dữ liệu đầy đủ thành bộ mẫu để chạy bằng Docker | Em chạy script, đối chiếu số dòng (300 phiếu, 298 khách, 300 thiết bị, 1.448 dòng lịch sử) với kết quả `docker compose logs init`. |
 | **Claude** | Buổi 11 – tài liệu (`README.md`, `docs/bug-log.md`) | Nhờ viết lại README cho cách chạy bằng Docker và nhật ký lỗi | Em đối chiếu từng lệnh, cổng và số liệu với kết quả chạy thật trên máy mình, điền liên kết commit vào bug log. |
+| **Claude** | BT2 – đăng nhập / đăng ký (`utils/password.js`, `utils/token.js`, `services/auth.service.js`, `routes/auth.routes.js`, `validators/auth.schema.js`, `middlewares/actor.js`, migration `003`, `seed.js`, `LoginPage.jsx`, `RegisterPage.jsx`, `session.js`, `client.js`, các test `password`, `token`, `auth.*`, `actor`, `loginPage`, `registerPage`) | Nhờ thiết kế và soạn mã đăng nhập 3 vai trò, đăng ký, JWT 30 phút, băm mật khẩu, khoá khi sai nhiều lần | Em chạy `migrate`/`seed` hai lần, đăng nhập đủ 3 vai trò, thử sai mật khẩu, sai vai trò, token giả, hết hạn và 6 lần sai liên tiếp; đọc từng hàm để giải thích được; chạy `npm test` hai gói. [Em bổ sung: điều em đã tự sửa hoặc phát hiện] |
 | **Antigravity** | Rà soát repo trước khi push | Gửi prompt kiểm tra checklist buổi 8 (chỉ đọc, không sửa) | Em tự đọc từng mục FAIL/WARN, quyết định sửa; bỏ qua cảnh báo không áp dụng (ví dụ tệp PDF BT1 là bài nộp). |
 
 ### 8.2. Các phần tự thực hiện, không sử dụng AI
