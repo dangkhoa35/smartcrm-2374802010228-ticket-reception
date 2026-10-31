@@ -2,8 +2,17 @@
 // Nạp DỮ LIỆU DANH MỤC từ bộ dữ liệu mẫu: service_centers.csv, issue_categories.csv,
 // technicians.csv, và sinh 60 mã nhân viên (xem chú thích bảng employee ở migration 002).
 // Chạy lại được: dữ liệu đã có thì bỏ qua.
+// Cuối cùng gắn 3 TÀI KHOẢN MẪU (mỗi vai trò một tài khoản) vào mã nhân viên 1, 2, 3 (xem DEMO_ACCOUNTS).
+// CHỈ để chạy thử/chấm bài: đổi hoặc xoá các tài khoản này trước khi triển khai thật.
 const { pool } = require('./pool');
 const { readCsv } = require('./csv');
+const { hashPassword } = require('../utils/password');
+
+const DEMO_ACCOUNTS = [
+  { employeeId: 1, role: 'NHAN_VIEN_TIEP_NHAN', username: 'tiepnhan',   password: 'Tiepnhan@123', fullName: 'Tiếp nhận Mẫu' },
+  { employeeId: 2, role: 'KY_THUAT_VIEN',       username: 'kythuatvien', password: 'Kythuat@123',  fullName: 'Kỹ thuật Mẫu' },
+  { employeeId: 3, role: 'QUAN_LY_TRUNG_TAM',   username: 'quanly',      password: 'Quanly@123',   fullName: 'Quản lý Mẫu' },
+];
 
 const col = (rows, key, conv = (v) => v) => rows.map((r) => conv(r[key]));
 const bool = (v) => String(v).toLowerCase() === 'true';
@@ -50,6 +59,15 @@ async function run() {
        FROM generate_series(1, 60) AS g
        ON CONFLICT DO NOTHING`);
 
+    // Tài khoản mẫu: chỉ gán khi mã nhân viên CHƯA có tài khoản và đúng vai trò -> chạy lại không đổi gì
+    for (const a of DEMO_ACCOUNTS) {
+      await client.query(
+        `UPDATE employee SET username = $1, password_hash = $2, full_name = $3
+         WHERE employee_id = $4 AND role = $5 AND username IS NULL
+           AND NOT EXISTS (SELECT 1 FROM employee WHERE username = $1)`,
+        [a.username, await hashPassword(a.password), a.fullName, a.employeeId, a.role]);
+    }
+
     // Đồng bộ sequence vì đã chèn id tường minh
     for (const [tbl, c] of [['service_center', 'center_id'], ['issue_category', 'category_id'],
                             ['technician', 'technician_id'], ['employee', 'employee_id']]) {
@@ -68,7 +86,8 @@ async function run() {
     SELECT 'service_center' AS bang, count(*)::int AS so_dong FROM service_center UNION ALL
     SELECT 'issue_category', count(*)::int FROM issue_category UNION ALL
     SELECT 'technician',     count(*)::int FROM technician UNION ALL
-    SELECT 'employee',       count(*)::int FROM employee`);
+    SELECT 'employee',       count(*)::int FROM employee UNION ALL
+    SELECT 'employee có tài khoản', count(*)::int FROM employee WHERE username IS NOT NULL`);
   console.table(rows);
   await pool.end();
 }
