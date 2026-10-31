@@ -16,7 +16,7 @@ Thang mức độ: **Critical** (mất dữ liệu hoặc hệ thống không ch
 | 4. Cách tái lập | Chạy hệ thống, gọi `curl.exe -s "localhost:3000/api/tickets?size=2"`, rồi `docker compose logs api --tail 3` |
 | 5. Nguyên nhân | Express tạm bỏ tiền tố điểm gắn (`/api`) khỏi `req.path` khi yêu cầu còn nằm trong router con. Hàm ghi log đọc `req.path` ở sự kiện `finish`, lúc đó vẫn đang ở trong router nên nhận `/`. Lỗi chỉ lộ ở yêu cầu thành công; yêu cầu lỗi đi qua bộ xử lý lỗi ở cấp ứng dụng nên vẫn ghi đúng |
 | 6. Cách sửa | Dùng `req.originalUrl.split('?')[0]` (đường dẫn đầy đủ, bỏ chuỗi truy vấn vì chuỗi truy vấn có thể chứa số điện thoại) trong `src/backend/utils/logger.js` và `src/backend/middlewares/errorHandler.js` |
-| 7. Commit và xác nhận | `<dán liên kết commit BUG-001>` · test `log yêu cầu hoàn tất ghi đường dẫn ĐẦY ĐỦ, không có query string (BUG đường dẫn "/")` trong `tests/logger.test.js`: FAIL trước (`actual: '/'`, `expected: '/api/tickets'`), PASS sau; sau sửa, log hiện `"duong_dan":"/api/tickets"` |
+| 7. Commit và xác nhận | [f1647af](https://github.com/dangkhoa35/smartcrm-2374802010228-ticket-reception/commit/f1647af) · test `log yêu cầu hoàn tất ghi đường dẫn ĐẦY ĐỦ, không có query string (BUG đường dẫn "/")` trong `tests/logger.test.js`: FAIL trước (`actual: '/'`, `expected: '/api/tickets'`), PASS sau; sau sửa, log hiện `"duong_dan":"/api/tickets"` |
 
 ---
 
@@ -30,7 +30,7 @@ Thang mức độ: **Critical** (mất dữ liệu hoặc hệ thống không ch
 | 4. Cách tái lập | `docker compose up -d` (cổng 3000 bị Docker giữ), rồi ở thư mục gốc chạy `npm run dev`. Cách khác không cần Docker: giữ cổng 3000 bằng một tiến trình bất kỳ rồi chạy `node src/backend/server.js` |
 | 5. Nguyên nhân | Từ Express 5, khi `app.listen` không mở được cổng (ví dụ `EADDRINUSE`), lỗi **được truyền vào hàm callback** thay vì bị ném ra. `server.js` bỏ qua đối số lỗi của callback và luôn ghi log thành công, sau đó tiến trình hết việc nên thoát mã 0 |
 | 6. Cách sửa | Kiểm tra `err` trong callback của `app.listen`: nếu có lỗi thì ghi log ERROR (`không mở được cổng, API dừng`) và `process.exit(1)` (`src/backend/server.js`) |
-| 7. Commit và xác nhận | `<dán liên kết commit BUG-002>` · test `cổng đã bị chiếm -> server thoát mã 1, ghi log ERROR, không báo "đã khởi động"` trong `tests/server.test.js`: FAIL trước (`0 !== 1`), PASS sau; sau sửa, `npm run dev` ghi `"muc":"error"` kèm `EADDRINUSE` rồi dừng |
+| 7. Commit và xác nhận | [1e8fb64](https://github.com/dangkhoa35/smartcrm-2374802010228-ticket-reception/commit/1e8fb64) · test `cổng đã bị chiếm -> server thoát mã 1, ghi log ERROR, không báo "đã khởi động"` trong `tests/server.test.js`: FAIL trước (`0 !== 1`), PASS sau; sau sửa, `npm run dev` ghi `"muc":"error"` kèm `EADDRINUSE` rồi dừng |
 
 ---
 
@@ -44,7 +44,7 @@ Thang mức độ: **Critical** (mất dữ liệu hoặc hệ thống không ch
 | 4. Cách tái lập | `docker compose stop db`, rồi `curl.exe -s -i "localhost:3000/api/tickets?size=1"` và `docker compose logs api --tail 3` |
 | 5. Nguyên nhân | Khi container CSDL dừng, Docker không phân giải được tên `db`, Node báo `getaddrinfo EAI_AGAIN db` (mã `EAI_AGAIN`). Mã này chưa có trong danh sách lỗi hạ tầng `MA_LOI_HA_TANG` của `errorHandler.js` nên rơi vào nhánh lỗi chung 500. Cùng một tình huống, Docker có lúc báo `ENOTFOUND` (đã có trong danh sách, trả 503), có lúc báo `EAI_AGAIN`, nên lỗi lúc có lúc không |
 | 6. Cách sửa | Thêm `EAI_AGAIN` vào `MA_LOI_HA_TANG` trong `src/backend/middlewares/errorHandler.js` |
-| 7. Commit và xác nhận | `<dán liên kết commit BUG-003>` · test `không phân giải được tên máy CSDL (EAI_AGAIN) -> 503` trong `tests/errorHandler.test.js`: FAIL trước (`500 !== 503`), PASS sau. Sau sửa `npm test`: 58/58 đạt. Ở lần thử ngay sau đó (`ENOTFOUND`), API trả 503 và mã tra cứu `8edcbd75-…` khớp `requestId` trong log |
+| 7. Commit và xác nhận | [5dd8430](https://github.com/dangkhoa35/smartcrm-2374802010228-ticket-reception/commit/5dd8430) · test `không phân giải được tên máy CSDL (EAI_AGAIN) -> 503` trong `tests/errorHandler.test.js`: FAIL trước (`500 !== 503`), PASS sau. Sau sửa `npm test`: 58/58 đạt. Ở lần thử ngay sau đó (`ENOTFOUND`), API trả 503 và mã tra cứu `8edcbd75-…` khớp `requestId` trong log |
 
 ---
 
