@@ -1,4 +1,4 @@
-﻿# Smart CRM – Tiếp nhận và phân loại yêu cầu bảo hành
+# Smart CRM – Tiếp nhận và phân loại yêu cầu bảo hành
 
 **Sinh viên:** Hà Đăng Khoa – **MSSV:** 2374802010228  
 **Track:** SE  
@@ -60,7 +60,7 @@ Có hai cách chạy. **Cách A (khuyến nghị)** không cần cài Node hay P
 | Kiểm thử backend | Bộ chạy test có sẵn của Node.js (`node --test`) | Đang dùng |
 | Kiểm thử frontend | Vitest, Testing Library, jsdom | Đang dùng |
 | Đóng gói | Docker, Docker Compose (Dockerfile nhiều giai đoạn; nginx phục vụ giao diện) | Đang dùng |
-| Tài liệu API | `docs/diagrams/api-contract.md`; Swagger UI | Markdown đã có; Swagger dự kiến |
+| Tài liệu API | `docs/api-contract.md`; Swagger UI | Markdown đã có; Swagger dự kiến |
 
 ---
 
@@ -72,16 +72,16 @@ smartcrm-2374802010228-ticket-reception/
 │   ├── raw/                          # CSV đầy đủ của học phần (KHÔNG commit)
 │   └── sample/                       # bộ mẫu nhỏ (CÓ commit) để chạy bằng Docker
 ├── docs/
-│   ├── diagrams/
-│   │   ├── export/                   # ảnh xuất từ sơ đồ (architecture, erd, usecase, wireframe)
-│   │   ├── ai-disclosure.md
-│   │   ├── api-contract.md
-│   │   ├── architecture.drawio
-│   │   ├── erd.drawio
-│   │   ├── srs.md
-│   │   ├── thay-doi-thiet-ke.md
-│   │   ├── usecase.drawio
-│   │   └── usecase.png
+│   │
+│   ├── export/                   # ảnh xuất từ sơ đồ (architecture, erd, usecase, wireframe)
+│   ├── ai-disclosure.md
+│   ├── api-contract.md
+│   ├── architecture.drawio
+│   ├── erd.drawio
+│   ├── srs.md
+│   ├── thay-doi-thiet-ke.md
+│   ├── usecase.drawio
+│   └── usecase.png
 │   ├── screenshots/                  # ảnh chụp kết quả chạy API, giao diện, Docker
 │   └── bug-log.md                    # nhật ký lỗi đã gỡ (buổi 11)
 ├── scripts/
@@ -347,7 +347,7 @@ $h = @{ Authorization = "Bearer $($r.data.token)" }
 Invoke-RestMethod "http://localhost:3000/api/tickets?status=DANG_XU_LY&size=3" -Headers $h
 ```
 Postman: gọi `POST /api/auth/login`, chép `data.token`, rồi ở tab Authorization của yêu cầu sau chọn **Bearer Token** và dán vào. Token hết hạn sau 30 phút.
-Kết quả mong đợi: `{"status":"ok"}`; danh sách phiếu kèm `paging` (số điện thoại đầy đủ với Quản lý, đã che với vai trò khác); danh mục nhóm sự cố; `400 DU_LIEU_KHONG_HOP_LE` kèm `fields` theo từng trường. Đặc tả đầy đủ: [`docs/diagrams/api-contract.md`](docs/diagrams/api-contract.md).
+Kết quả mong đợi: `{"status":"ok"}`; danh sách phiếu kèm `paging` (số điện thoại đầy đủ với Quản lý, đã che với vai trò khác); danh mục nhóm sự cố; `400 DU_LIEU_KHONG_HOP_LE` kèm `fields` theo từng trường. Đặc tả đầy đủ: [`docs/api-contract.md`](docs/api-contract.md).
 
 Trong PowerShell, gửi JSON bằng tệp để tránh lỗi dấu nháy: `curl.exe -i -s -X POST localhost:3000/api/tickets -H "Content-Type: application/json" --data-binary "@body.json"`.
 
@@ -486,17 +486,17 @@ Giao diện xử lý được cả hai trường hợp 5xx: hiện thông báo l
 
 | Nội dung | Tệp |
 |---|---|
-| Đặc tả yêu cầu phần mềm (SRS) | [`docs/diagrams/srs.md`](docs/diagrams/srs.md) |
-| Hợp đồng API | [`docs/diagrams/api-contract.md`](docs/diagrams/api-contract.md) |
-| Nhật ký thay đổi thiết kế | [`docs/diagrams/thay-doi-thiet-ke.md`](docs/diagrams/thay-doi-thiet-ke.md) |
+| Đặc tả yêu cầu phần mềm (SRS) | [`docs/srs.md`](docs/srs.md) |
+| Hợp đồng API | [`docs/api-contract.md`](docs/api-contract.md) |
+| Nhật ký thay đổi thiết kế | [`docs/thay-doi-thiet-ke.md`](docs/thay-doi-thiet-ke.md) |
 | Nhật ký lỗi đã gỡ (buổi 11) | [`docs/bug-log.md`](docs/bug-log.md) |
-| Sơ đồ Use Case | [`docs/diagrams/usecase.drawio`](docs/diagrams/usecase.drawio) |
-| Sơ đồ kiến trúc | [`docs/diagrams/architecture.drawio`](docs/diagrams/architecture.drawio) |
-| Sơ đồ ERD | [`docs/diagrams/erd.drawio`](docs/diagrams/erd.drawio) |
-| Wireframe | [`docs/diagrams/export/wireframe.png`](docs/diagrams/export/wireframe.png) |
+| Sơ đồ Use Case | [`docs/usecase.drawio`](docs/usecase.drawio) |
+| Sơ đồ kiến trúc | [`docs/architecture.drawio`](docs/architecture.drawio) |
+| Sơ đồ ERD | [`docs/erd.drawio`](docs/erd.drawio) |
+| Wireframe | [`docs/export/wireframe.png`](docs/export/wireframe.png) |
 | Ảnh chụp kết quả chạy API, giao diện, Docker | [`docs/screenshots/`](docs/screenshots/) |
-| Khai báo sử dụng công cụ AI | [`docs/diagrams/ai-disclosure.md`](docs/diagrams/ai-disclosure.md) |
-| Hình ảnh sơ đồ đã xuất | [`docs/diagrams/export/`](docs/diagrams/export/) |
+| Khai báo sử dụng công cụ AI | [`docs/ai-disclosure.md`](docs/ai-disclosure.md) |
+| Hình ảnh sơ đồ đã xuất | [`docs/export/`](docs/export/) |
 
 ---
 
@@ -522,7 +522,7 @@ Giao diện xử lý được cả hai trường hợp 5xx: hiện thông báo l
 | **Claude** | Buổi 11 – nhật ký và xử lý lỗi (`utils/logger.js`, `middlewares/errorHandler.js`, `app.js`, `server.js`, `tests/logger.test.js`, `tests/errorHandler.test.js`, `tests/server.test.js`) | Nhờ soạn logger JSON có `requestId`, bộ xử lý lỗi duy nhất và test | Em chạy `npm test` (58 test đạt); đọc log thật khi chạy và phát hiện 3 lỗi (BUG-001 đến BUG-003 trong `docs/bug-log.md`); với mỗi lỗi, chạy test thấy FAIL trước khi sửa, PASS sau khi sửa; thử tắt `api` và `db` để thấy giao diện hiện lỗi kèm nút Thử lại và API trả 503 kèm mã tra cứu khớp log. |
 | **Claude** | Buổi 11 – dữ liệu mẫu nhỏ (`scripts/make-sample.js`, `data/sample/`) | Nhờ soạn script cắt bộ dữ liệu đầy đủ thành bộ mẫu để chạy bằng Docker | Em chạy script, đối chiếu số dòng (300 phiếu, 298 khách, 300 thiết bị, 1.448 dòng lịch sử) với kết quả `docker compose logs init`. |
 | **Claude** | Buổi 11 – tài liệu (`README.md`, `docs/bug-log.md`) | Nhờ viết lại README cho cách chạy bằng Docker và nhật ký lỗi | Em đối chiếu từng lệnh, cổng và số liệu với kết quả chạy thật trên máy mình, điền liên kết commit vào bug log. |
-| **Claude** | BT2 – đăng nhập / đăng ký (`utils/password.js`, `utils/token.js`, `services/auth.service.js`, `routes/auth.routes.js`, `validators/auth.schema.js`, `middlewares/actor.js`, migration `003`, `seed.js`, `LoginPage.jsx`, `RegisterPage.jsx`, `session.js`, `client.js`, các test `password`, `token`, `auth.*`, `actor`, `loginPage`, `registerPage`) | Nhờ thiết kế và soạn mã đăng nhập 3 vai trò, đăng ký, JWT 30 phút, băm mật khẩu, khoá khi sai nhiều lần | Em chạy `migrate`/`seed` hai lần, đăng nhập đủ 3 vai trò, thử sai mật khẩu, sai vai trò, token giả, hết hạn và 6 lần sai liên tiếp; đọc từng hàm để giải thích được; chạy `npm test` hai gói. [Em bổ sung: điều em đã tự sửa hoặc phát hiện] |
+| **Claude** | BT2 – đăng nhập / đăng ký (`utils/password.js`, `utils/token.js`, `services/auth.service.js`, `routes/auth.routes.js`, `validators/auth.schema.js`, `middlewares/actor.js`, migration `003`, `seed.js`, `LoginPage.jsx`, `RegisterPage.jsx`, `session.js`, `client.js`, các test `password`, `token`, `auth.*`, `actor`, `loginPage`, `registerPage`) | Nhờ thiết kế và soạn mã đăng nhập 3 vai trò, đăng ký, JWT 30 phút, băm mật khẩu, khoá khi sai nhiều lần | Em chạy `migrate`/`seed` hai lần, đăng nhập đủ 3 vai trò, thử sai mật khẩu, sai vai trò, token giả, hết hạn và 6 lần sai liên tiếp; đọc từng hàm để giải thích được; chạy `npm test` hai gói. |
 | **Antigravity** | Rà soát repo trước khi push | Gửi prompt kiểm tra checklist buổi 8 (chỉ đọc, không sửa) | Em tự đọc từng mục FAIL/WARN, quyết định sửa; bỏ qua cảnh báo không áp dụng (ví dụ tệp PDF BT1 là bài nộp). |
 
 ### 8.2. Các phần tự thực hiện, không sử dụng AI

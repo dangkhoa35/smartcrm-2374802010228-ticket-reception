@@ -15,7 +15,7 @@
 - Quyết định: SỬA
 - Lý do: DDL là đầu vào trực tiếp của migration ở Sprint 1; phải chạy được nguyên văn.
 - Ảnh hưởng: Thay "," bằng ";" ở cuối mọi CREATE TABLE / CREATE INDEX / ALTER TABLE;
-  DDL đã chạy thử trên PostgreSQL, lưu ở db/migrations/001_init.sql.
+  DDL đã chạy thử trên PostgreSQL, lưu ở db/migrations/001_init_schema.sql.
 
 ### TD-03 Bổ sung ngày vào bảng khai báo AI
 - Phản hồi của GV: Dòng cam kết phụ AI thiếu ngày.
@@ -40,3 +40,39 @@
 - Quyết định: SỬA một phần
 - Lý do: Bản Word đã nộp giữ nguyên làm bằng chứng; bản srs.md trong repo là bản làm việc.
 - Ảnh hưởng: Rút gọn srs.md, chuyển bảng chi tiết xuống phụ lục.
+
+## Thay đổi trong Giai đoạn 2 (Sprint 1–2, BT2)
+
+### TD-07 Thêm ba bảng danh mục: service_center, employee, technician
+- Phát hiện khi: nạp bộ dữ liệu của học phần ở Sprint 1.
+- Quyết định: SỬA (bổ sung)
+- Lý do: Bộ dữ liệu có trung tâm, nhân viên và kỹ thuật viên; phiếu cần khóa ngoại tới chúng để kiểm tra quyền theo trung tâm và phê duyệt.
+- Ảnh hưởng: ERD từ 5 lên 8 bảng; thêm migration 002; seed nạp 6 trung tâm, 38 kỹ thuật viên, 60 mã nhân viên.
+
+### TD-08 Đổi định dạng lỗi từ details sang fields
+- Phát hiện khi: làm hợp đồng ở ranh giới giữa giao diện và API.
+- Quyết định: SỬA (thay đổi phá vỡ, đổi một lần vì chưa có bên gọi nào dùng details)
+- Lý do: Giao diện hiện lỗi ngay cạnh từng ô nhập nên tra theo tên trường; một định dạng lỗi ba trường cố định `error`, `message`, `fields`.
+- Ảnh hưởng: `api-contract.md` v1.2; thêm CORS; tách `contracts/` và `validators/` (zod).
+
+### TD-09 Sửa các chỗ đứt gãy khi tích hợp end-to-end
+- Phát hiện khi: chạy luồng chính trên giao diện và dữ liệu thật (xem `docs/e2e-luong-chinh.md`).
+- Quyết định: SỬA
+- Lý do: Danh sách hiện phiếu cũ đã đóng ở đầu; khách mới không thêm được thiết bị; mã phê duyệt sai báo lỗi hệ thống 500; phân công không ghi kỹ thuật viên; ngày hiện năm 2 chữ số.
+- Ảnh hưởng: `api-contract.md` v1.3: thêm tham số `open=true` cho EP5, thêm EP9 (thêm thiết bị) và EP10 (danh sách kỹ thuật viên), kiểm tra người phê duyệt trả 422, `DA_PHAN_CONG` bắt buộc `technician_id`, trả thêm `technician_name`, năm 4 chữ số.
+
+### TD-10 Hoãn đề xuất nhóm sự cố từ mô tả (US4)
+- Quyết định: HOÃN
+- Lý do: US4 là SHOULD, không chặn luồng tạo phiếu; ưu tiên cho luồng chính chạy ổn định, có kiểm thử và chạy lại được.
+- Ảnh hưởng: Người dùng chọn nhóm sự cố thủ công từ EP8; mục "Đề xuất phân loại" trong `api-contract.md` ghi "Chưa làm".
+
+### TD-11 Hoãn lọc nâng cao và lịch sử thiết bị (US7)
+- Quyết định: HOÃN
+- Lý do: Cùng lý do TD-10; danh sách đã có lọc theo trạng thái và "Đang mở", đủ cho câu hỏi chính của màn hình.
+- Ảnh hưởng: Chưa có lọc `overdue`, `assignee_id`, serial; chưa có lịch sử trạng thái trên màn chi tiết và cảnh báo lỗi lặp lại.
+
+### TD-12 Thay header tự khai bằng đăng nhập JWT
+- Phát hiện khi: rà soát bảo mật trước BT2.
+- Quyết định: SỬA (thay đổi phá vỡ; giao diện là bên gọi duy nhất nên đổi một lần)
+- Lý do: Header `x-role` tự khai cho phép ai cũng giả làm Quản lý; vai trò phải đến từ token do máy chủ ký.
+- Ảnh hưởng: `api-contract.md` v1.5: thêm EP11 đăng nhập, EP12 đăng ký, EP13 danh sách trung tâm; token HS256 hết hạn 30 phút; mật khẩu băm scrypt; migration 003 thêm `username`, `password_hash`, `is_active`, `created_at` vào `employee`; yêu cầu không token bị 401; thêm trang đăng nhập và đăng ký.

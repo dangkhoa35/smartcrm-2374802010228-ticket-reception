@@ -16,7 +16,7 @@ Phân hệ L2 – Tiếp nhận và phân loại yêu cầu bảo hành. Chạy 
 | 5 | Nhân viên tiếp nhận | Mô tả lỗi `tai nghe hư một bên`, nhóm sự cố **Phần mềm**, phụ kiện **Khác**, bấm **Lưu phiếu bảo hành** | Chuyển sang `/tickets/7802`, thông báo "Đã tạo phiếu bảo hành **BH-007802/2026**"; trạng thái **Mới**; mức ưu tiên Trung bình; ngày tiếp nhận 20:27 25/10/2026; hạn cam kết **20:27 28/10/2026** (Còn 2 ngày, hệ thống tự tính theo QT02); bảo hành "Còn bảo hành"; kỹ thuật viên "Chưa phân công" | EP4 (`201`), EP7 | `buoi10-chi_tiet_phieu.png` |
 | 6 | Nhân viên tiếp nhận | Mở `/tickets` | Mặc định lọc **Đang mở** (ẩn phiếu đã đóng, đã hủy); ô lọc có "Đang mở", "Tất cả" và từng trạng thái; dòng "15 phiếu quá hạn trong trang này"; các phiếu quá hạn của dữ liệu 2024 nằm trên cùng | EP5 (`open=true`) | `buoi10-danh_sach.png` |
 | 7 | Kỹ thuật viên | Đổi vai trò, mở `/tickets/7802`, chọn trạng thái **Đã phân công** | Xuất hiện ô **Kỹ thuật viên phụ trách**; danh sách chọn có `Phan Kim Hạnh (KT033)` | EP7, EP10 | `buoi10-phan_cong_ktv.png` |
-| 8 | Kỹ thuật viên | Chọn `Phan Kim Hạnh (KT033)` rồi bấm **Cập nhật** | Theo hợp đồng API: `200`, `status = DA_PHAN_CONG`, `technician_id = 33`, `technician_name = Phan Kim Hạnh`; chi tiết phiếu hiện tên kỹ thuật viên thay vì "Chưa phân công". **[CẦN XÁC NHẬN bằng ảnh chụp sau khi bấm Cập nhật rồi sửa dòng này thành kết quả quan sát]** | EP6 (`PATCH`, kèm `technician_id`) | (chưa có) |
+| 8 | Kỹ thuật viên | Chọn `Phan Kim Hạnh (KT033)` rồi bấm **Cập nhật** | Theo hợp đồng API: `200`, `status = DA_PHAN_CONG`, `technician_id = 33`, `technician_name = Phan Kim Hạnh`; chi tiết phiếu hiện tên kỹ thuật viên thay vì "Chưa phân công".  | EP6 (`PATCH`, kèm `technician_id`) | (chưa có) |
 
 ## 2. Các nhánh lỗi đã thử trên giao diện
 
@@ -36,7 +36,7 @@ Phân hệ L2 – Tiếp nhận và phân loại yêu cầu bảo hành. Chạy 
 | Chi tiết phiếu hiện "Kỹ thuật viên: 20" | Hợp đồng dữ liệu | EP5, EP7 trả thêm `technician_name` |
 | Ngày hiện năm 2 chữ số (1/9/24) | Hiển thị | `formatDateTime` dùng năm 4 chữ số |
 
-Chi tiết hợp đồng: `docs/diagrams/api-contract.md` v1.3 (mục 1.13). Phần đã cắt: `docs/diagrams/thay-doi-thiet-ke.md` (TD-09 đến TD-12).
+Chi tiết hợp đồng: `docs/api-contract.md` v1.3 (mục 1.13). Phần đã cắt: `docs/thay-doi-thiet-ke.md` (TD-09 đến TD-12).
 
 ## 4. Kiểm thử
 
