@@ -59,3 +59,15 @@ Các sự cố dưới đây không có test hồi quy vì nguyên nhân nằm �
 | `init` thoát mã 1: `Không thấy /data/service_centers.csv` | Thư mục `data/sample/` chưa có (rỗng), nên Docker tạo thư mục rỗng để gắn vào `/data` | Chạy `node scripts/make-sample.js` để tạo `data/sample/`, rồi `docker compose up -d` |
 | Giao diện báo "Không kết nối được tới hệ thống" dù API khỏe | Mở giao diện ở `localhost:5174` (Vite dev). API chỉ cho phép trang từ `CORS_ORIGIN=http://localhost:5173` nên trình duyệt chặn (CORS) | Mở đúng `http://localhost:5173`; không chạy Vite dev cùng lúc với Docker |
 | `docker compose down -v && ...` báo `&&` không hợp lệ | Windows PowerShell 5.1 không hỗ trợ `&&` | Chạy từng lệnh riêng hoặc nối bằng `;` |
+
+## BUG-004 · Major — Xác định bảo hành sai ở ngày cuối hạn và khi mua cuối tháng
+ 
+| Dòng | Nội dung |
+|---|---|
+| 1. Mã và mức độ | BUG-004 · Major — chức năng quan trọng (QT01) cho kết quả sai; có cách vòng là Quản lý trung tâm phê duyệt thủ công. Phân loại: câu 1 (không dùng được / dữ liệu sai nghiêm trọng / lỗ hổng) → không; câu 2 (chức năng quan trọng sai nhưng có cách làm khác) → có. |
+| 2. Phát hiện bởi | TC-03 (Test Report) — FAIL; TC-13 là test hồi quy |
+| 3. Triệu chứng | Thiết bị mua 01/03/2026 (bảo hành 12 tháng), tiếp nhận 09:00 ngày 01/03/2027: hệ thống trả "hết bảo hành" (đòi phê duyệt) trong khi QT01 cho phép đúng ngày cuối. Ngược lại thiết bị mua 31/08/2026 (6 tháng) tiếp nhận 02/03/2027 vẫn bị tính "còn bảo hành" dù hạn là 28/02/2027. |
+| 4. Cách tái lập | `node --test --test-name-pattern="TC-03" tests/bt3/unit.test.js` (FAIL: `actual: false`, `expected: true`); `node --test --test-name-pattern="TC-13" tests/bt3/regression.test.js` (FAIL). Lỗi xuất hiện mọi lần chạy. |
+| 5. Nguyên nhân | `isUnderWarranty()` trong `ticket.service.js` so sánh THỜI ĐIỂM tiếp nhận (có giờ) với 00:00 của ngày hết hạn, nên đúng ngày hết hạn nhưng sau 00:00 thì `receivedAt <= end` sai; ngoài ra `setMonth()` cộng tháng không kẹp cuối tháng nên 31/08 + 6 tháng tràn sang 03/03. |
+| 6. Cách sửa | So sánh theo NGÀY (cắt giờ của ngày tiếp nhận) và tính ngày hết hạn bằng lịch, kẹp về ngày cuối của tháng đích. |
+| 7. Commit và xác nhận | [6aea4b5](https://github.com/dangkhoa35/smartcrm-2374802010228-ticket-reception/commit/6aea4b54743c776d6f806ab37b4dfea6b6fdab8a) · test TC-03 (`tests/bt3/unit.test.js`) và TC-13 (`tests/bt3/regression.test.js`) nằm ở commit [1aa3bca](https://github.com/dangkhoa35/smartcrm-2374802010228-ticket-reception/commit/1aa3bca): FAIL trước khi sửa (`actual: false` / `actual: true`, ảnh `TC-03-FAIL.png`, `TC-13-FAIL.png`), PASS sau khi sửa; `npm test` 91/91 PASS (ảnh `docs/screenshots/BUG-004-fixed.png`) |

@@ -76,3 +76,11 @@
 - Quyết định: SỬA (thay đổi phá vỡ; giao diện là bên gọi duy nhất nên đổi một lần)
 - Lý do: Header `x-role` tự khai cho phép ai cũng giả làm Quản lý; vai trò phải đến từ token do máy chủ ký.
 - Ảnh hưởng: `api-contract.md` v1.5: thêm EP11 đăng nhập, EP12 đăng ký, EP13 danh sách trung tâm; token HS256 hết hạn 30 phút; mật khẩu băm scrypt; migration 003 thêm `username`, `password_hash`, `is_active`, `created_at` vào `employee`; yêu cầu không token bị 401; thêm trang đăng nhập và đăng ký.
+
+## Sau phản hồi Bài tập 2 (buổi 14, ngày 06/11/2026)
+
+### TD-13 Ghi nhận phản hồi BT2: không có lỗi cần khắc phục
+- Nhận xét của giảng viên: Điểm mạnh về giao dịch ghi phiếu + dòng lịch sử đầu tiên, vòng đời 7 trạng thái chỉ đi tới, 13 endpoint, 3 vai trò, React 5 trang đủ 3 trạng thái, bộ xử lý lỗi có mã tra cứu, Docker Compose 4 dịch vụ có healthcheck; mục "Cần khắc phục": không có lỗi đáng kể; bảng 4.2 đạt đủ mục chung và mục theo track.
+- Quyết định: GIỮ NGUYÊN thiết kế và mã của BT2, không sửa theo phản hồi.
+- Lý do: Không có nhận xét cần xử lý. Tuy vậy phản hồi tốt không có nghĩa là không còn lỗi: bộ test BT3 (buổi 13–14) kiểm các tình huống biên mà BT2 chưa kiểm; lỗi tìm thấy khi kiểm thử được ghi ở `docs/bug-log.md`, không ghi ở đây.
+- Ảnh hưởng: Không đổi `api-contract.md` hay cấu trúc. Giữ cách làm đã được khen cho BT3: ảnh minh chứng chụp từ bản clone theo tag (`v1.0`).
