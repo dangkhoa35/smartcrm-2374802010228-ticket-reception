@@ -21,9 +21,14 @@ const TRANSITIONS = {
 // QT01: còn bảo hành nếu ngày tiếp nhận <= ngày mua + số tháng bảo hành. Không có ngày mua -> không còn.
 function isUnderWarranty(device, receivedAt) {
   if (!device.purchase_date) return false;
-  const end = new Date(device.purchase_date);
-  end.setMonth(end.getMonth() + device.warranty_months);
-  return receivedAt <= end;
+  const p = new Date(device.purchase_date);
+  // Cộng tháng theo lịch, kẹp về ngày cuối tháng (31/08 + 6 tháng = 28/02, không tràn sang tháng 3)
+  const end = new Date(p.getFullYear(), p.getMonth() + device.warranty_months, 1);
+  const lastDay = new Date(end.getFullYear(), end.getMonth() + 1, 0).getDate();
+  end.setDate(Math.min(p.getDate(), lastDay));
+  // So theo NGÀY: ngày cuối hạn vẫn còn bảo hành dù tiếp nhận lúc 09:00 (QT01 dùng dấu <=)
+  const ngayNhan = new Date(receivedAt.getFullYear(), receivedAt.getMonth(), receivedAt.getDate());
+  return ngayNhan <= end;
 }
 
 // SRS 8a: người phê duyệt phải là Quản lý trung tâm thuộc CÙNG trung tâm với người thao tác.
