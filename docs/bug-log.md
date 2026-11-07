@@ -1,8 +1,12 @@
-# Bug Log – Smart CRM, luồng L2 (buổi 11)
+# Bug Log – Smart CRM, luồng L2 (buổi 11 và buổi 14)
 
 Chỉ ghi lỗi **thật** đã gặp và đã gỡ trong dự án. Mỗi mục có đủ 7 dòng. Dòng 5 là **nguyên nhân** (chỗ đầu tiên vi phạm hợp đồng), không phải triệu chứng. Dòng 7 có liên kết commit và một test hồi quy đã được chạy **FAIL trước khi sửa, PASS sau khi sửa**.
 
-Thang mức độ: **Critical** (mất dữ liệu hoặc hệ thống không chạy), **Major** (một chức năng hoặc tín hiệu vận hành sai, có cách vòng), **Minor** (khó điều tra hoặc sai mã trạng thái, người dùng cuối ít bị ảnh hưởng).
+Thang mức độ (theo đề BT3, đo bằng **tác động tới người dùng**, không phải độ khó sửa). Phân loại bằng hai câu hỏi theo thứ tự:
+
+1. Hệ thống không dùng được, **hoặc** dữ liệu bị sai, **hoặc** có lỗ hổng bảo mật? Có → **Critical** (bắt buộc sửa trước khi nộp).
+2. Một chức năng quan trọng sai hoặc không dùng được nhưng có cách làm khác? Có → **Major** (nên sửa; không sửa thì ghi lý do và hướng xử lý).
+3. Còn lại (ảnh hưởng trải nghiệm hoặc trình bày, nghiệp vụ vẫn đúng) → **Minor**.
 
 ---
 
@@ -10,7 +14,7 @@ Thang mức độ: **Critical** (mất dữ liệu hoặc hệ thống không ch
 
 | Dòng | Nội dung |
 |---|---|
-| 1. Mã và mức độ | BUG-001 · Minor |
+| 1. Mã và mức độ | BUG-001 · Minor — câu 1: không (nghiệp vụ, dữ liệu và bảo mật không bị ảnh hưởng); câu 2: không (chỉ khó điều tra qua log, mọi chức năng của người dùng vẫn đúng) |
 | 2. Phát hiện bởi | Đọc `docker compose logs api` sau khi gọi `curl.exe -s "localhost:3000/api/tickets?size=2"` (phép thử tự kiểm buổi 11) |
 | 3. Triệu chứng | Mọi dòng log `yêu cầu hoàn tất` của các yêu cầu `/api/*` thành công đều ghi `"duong_dan":"/"` thay vì `/api/tickets`, nên không biết yêu cầu nào đã chạy |
 | 4. Cách tái lập | Chạy hệ thống, gọi `curl.exe -s "localhost:3000/api/tickets?size=2"`, rồi `docker compose logs api --tail 3` |
@@ -24,7 +28,7 @@ Thang mức độ: **Critical** (mất dữ liệu hoặc hệ thống không ch
 
 | Dòng | Nội dung |
 |---|---|
-| 1. Mã và mức độ | BUG-002 · Major |
+| 1. Mã và mức độ | BUG-002 · Major — câu 1: không (hệ thống chạy bình thường khi cổng trống, không mất hay sai dữ liệu); câu 2: có (chức năng khởi động báo sai "đã khởi động" rồi thoát mã 0 khi cổng bị chiếm; có cách vòng là giải phóng cổng 3000) |
 | 2. Phát hiện bởi | Chạy `npm run dev` khi container `api` của Docker đang giữ cổng 3000 |
 | 3. Triệu chứng | Terminal in `"API đã khởi động"` rồi ngay sau đó `Completed running 'src/backend/server.js'. Waiting for file changes before restarting...`. Tiến trình đã thoát, không nhận được yêu cầu nào, và không có dòng ERROR nào giải thích |
 | 4. Cách tái lập | `docker compose up -d` (cổng 3000 bị Docker giữ), rồi ở thư mục gốc chạy `npm run dev`. Cách khác không cần Docker: giữ cổng 3000 bằng một tiến trình bất kỳ rồi chạy `node src/backend/server.js` |
@@ -38,7 +42,7 @@ Thang mức độ: **Critical** (mất dữ liệu hoặc hệ thống không ch
 
 | Dòng | Nội dung |
 |---|---|
-| 1. Mã và mức độ | BUG-003 · Minor |
+| 1. Mã và mức độ | BUG-003 · Minor — câu 1: không (lỗi chỉ xảy ra lúc CSDL đã dừng, người dùng vốn không thao tác được); câu 2: không (chỉ sai mã trạng thái 500 thay vì 503, thông báo và mã tra cứu vẫn đúng) |
 | 2. Phát hiện bởi | Bài thử suy giảm có kiểm soát: `docker compose stop db` rồi gọi API |
 | 3. Triệu chứng | `GET /api/tickets` trả `500 LOI_HE_THONG` sau 5.045 ms (`thoi_gian_ms`) thay vì `503`, dù thiết kế là mất kết nối CSDL trả 503 |
 | 4. Cách tái lập | `docker compose stop db`, rồi `curl.exe -s -i "localhost:3000/api/tickets?size=1"` và `docker compose logs api --tail 3` |

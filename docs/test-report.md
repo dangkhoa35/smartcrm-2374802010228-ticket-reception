@@ -1,24 +1,26 @@
 # Test Report — Luồng L2 (track SE)
 
-> **Cách dùng:** mỗi test case có 8 cột theo mẫu buổi 13. Cột 1–6 đã viết sẵn từ code test; **cột 7 (Kết quả thực tế) và cột 8 (PASS/FAIL) em chỉ điền SAU KHI chạy thật bằng lệnh ghi dưới mỗi test case**, rồi chụp ảnh lưu `docs/screenshots/TC-xx.png`. Khác mong đợi ở bất kỳ điểm nào là FAIL.
+> **Ngày chạy:** 06/11/2026 (buổi 14). **Tổng kết:** 13 test case — 11 PASS ngay lần chạy đầu; TC-03 và TC-13 FAIL lần đầu (lộ BUG-004), sau khi sửa (commit `6aea4b5`) cả hai PASS; `npm test` toàn bộ: 91/91 PASS.
+
+> Mỗi test case có đủ 8 cột. Kết quả thực tế ghi theo lần chạy thật ngày 06/11/2026, kèm ảnh chụp trong `docs/screenshots/`. FAIL được giữ nguyên ở lần chạy đầu, sau đó sửa và chạy lại (xem Bug Log BUG-004).
 
 > Chạy cả bộ: `npm test` · Chạy riêng một test case: lệnh ở dòng "Lệnh chạy" của từng mục.
 
 | Mã | Loại | Tầng | Mức ưu tiên | Kết quả | Ảnh |
 |---|---|---|---|---|---|
-| TC-01 | QT01 – luồng đúng | unit | Cao | _(điền sau khi chạy)_ | docs/screenshots/TC-01.png |
-| TC-02 | QT02 – luồng đúng | unit | Cao | _(điền sau khi chạy)_ | docs/screenshots/TC-02.png |
-| TC-03 | QT01 – biên (ngày cuối hạn) | unit | Cao | _(điền sau khi chạy)_ | docs/screenshots/TC-03.png |
-| TC-04 | QT01 – biên (sau hạn 1 ngày) | unit | Cao | _(điền sau khi chạy)_ | docs/screenshots/TC-04.png |
-| TC-05 | QT02 – biên (bỏ qua Chủ nhật) | unit | Trung bình | _(điền sau khi chạy)_ | docs/screenshots/TC-05.png |
-| TC-06 | Dữ liệu sai – mô tả lỗi quá ngắn | unit | Trung bình | _(điền sau khi chạy)_ | docs/screenshots/TC-06.png |
-| TC-07 | Dữ liệu sai – thiếu mô tả lỗi | unit | Trung bình | _(điền sau khi chạy)_ | docs/screenshots/TC-07.png |
-| TC-08 | QT03/QT02 – luồng đúng (lưu CSDL) | integration | Cao | _(điền sau khi chạy)_ | docs/screenshots/TC-08.png |
-| TC-09 | QT03 – xung đột phiếu mở (kiểm tác dụng phụ) | integration | Cao | _(điền sau khi chạy)_ | docs/screenshots/TC-09.png |
-| TC-10 | Tái lập – migrate + seed lần hai | integration | Cao | _(điền sau khi chạy)_ | docs/screenshots/TC-10.png |
-| TC-11 | Bảo mật A01 – kiểm soát truy cập | api | Cao | _(điền sau khi chạy)_ | docs/screenshots/TC-11.png |
-| TC-12 | API – luồng đúng tạo phiếu | api | Cao | _(điền sau khi chạy)_ | docs/screenshots/TC-12.png |
-| TC-13 | Hồi quy BUG-004 – cộng tháng không tràn | unit | Trung bình | _(điền sau khi chạy)_ | docs/screenshots/TC-13.png |
+| TC-01 | QT01 – luồng đúng | unit | Cao | **PASS** | docs/screenshots/TC-01.png |
+| TC-02 | QT02 – luồng đúng | unit | Cao | **PASS** | docs/screenshots/TC-02.png |
+| TC-03 | QT01 – biên (ngày cuối hạn) | unit | Cao | **FAIL lần 1 → PASS sau khi sửa BUG-004** | docs/screenshots/TC-03.png |
+| TC-04 | QT01 – biên (sau hạn 1 ngày) | unit | Cao | **PASS** | docs/screenshots/TC-04.png |
+| TC-05 | QT02 – biên (bỏ qua Chủ nhật) | unit | Trung bình | **PASS** | docs/screenshots/TC-05.png |
+| TC-06 | Dữ liệu sai – mô tả lỗi quá ngắn | unit | Trung bình | **PASS** | docs/screenshots/TC-06.png |
+| TC-07 | Dữ liệu sai – thiếu mô tả lỗi | unit | Trung bình | **PASS** | docs/screenshots/TC-07.png |
+| TC-08 | QT03/QT02 – luồng đúng (lưu CSDL) | integration | Cao | **PASS** | docs/screenshots/TC-08.png |
+| TC-09 | QT03 – xung đột phiếu mở (kiểm tác dụng phụ) | integration | Cao | **PASS** | docs/screenshots/TC-09.png |
+| TC-10 | Tái lập – migrate + seed lần hai | integration | Cao | **PASS** | docs/screenshots/TC-10.png |
+| TC-11 | Bảo mật A01 – kiểm soát truy cập | api | Cao | **PASS** | docs/screenshots/TC-11.png |
+| TC-12 | API – luồng đúng tạo phiếu | api | Cao | **PASS** | docs/screenshots/TC-12.png |
+| TC-13 | Hồi quy BUG-004 – cộng tháng không tràn | unit | Trung bình | **FAIL lần 1 → PASS sau khi sửa BUG-004** | docs/screenshots/TC-13.png |
 
 ## TC-01 — QT01 – luồng đúng
 
@@ -30,8 +32,8 @@
 | 4. Dữ liệu thử | `purchase_date = 01/03/2026; warranty_months = 12; receivedAt = 28/02/2027 09:00` |
 | 5. Kết quả mong đợi | Trả về true (còn bảo hành) |
 | 6. Mức ưu tiên | Cao |
-| 7. Kết quả thực tế | _(điền bằng lời CỤ THỂ sau khi chạy: mã trạng thái, thông báo, số dòng trước/sau …)_ |
-| 8. PASS / FAIL | _(điền sau khi chạy)_ · ảnh: `docs/screenshots/TC-01.png` |
+| 7. Kết quả thực tế | Chạy lệnh ở trên, test báo ✔. `isUnderWarranty` (mua 01/03/2026, bảo hành 12 tháng; tiếp nhận 28/02/2027 09:00) trả `true`, khớp mong đợi. |
+| 8. PASS / FAIL | **PASS** · ảnh: `docs/screenshots/TC-01.png` |
 
 Lệnh chạy: `node --test --test-name-pattern="TC-01" tests/bt3/unit.test.js`
 
@@ -45,8 +47,8 @@ Lệnh chạy: `node --test --test-name-pattern="TC-01" tests/bt3/unit.test.js`
 | 4. Dữ liệu thử | `receivedAt = 2026-11-06T09:00:00+07:00; priority = CAO` |
 | 5. Kết quả mong đợi | Hạn cam kết = thứ Bảy 07/11/2026 09:00 (+07) |
 | 6. Mức ưu tiên | Cao |
-| 7. Kết quả thực tế | _(điền bằng lời CỤ THỂ sau khi chạy: mã trạng thái, thông báo, số dòng trước/sau …)_ |
-| 8. PASS / FAIL | _(điền sau khi chạy)_ · ảnh: `docs/screenshots/TC-02.png` |
+| 7. Kết quả thực tế | Chạy lệnh ở trên, test báo ✔. `computeDueDate` (thứ Sáu 06/11/2026 09:00 +07, mức CAO) trả thứ Bảy 07/11/2026 09:00 +07, khớp mong đợi. |
+| 8. PASS / FAIL | **PASS** · ảnh: `docs/screenshots/TC-02.png` |
 
 Lệnh chạy: `node --test --test-name-pattern="TC-02" tests/bt3/unit.test.js`
 
@@ -60,8 +62,8 @@ Lệnh chạy: `node --test --test-name-pattern="TC-02" tests/bt3/unit.test.js`
 | 4. Dữ liệu thử | `purchase_date = 01/03/2026; warranty_months = 12; receivedAt = 01/03/2027 09:00` |
 | 5. Kết quả mong đợi | Trả về true: QT01 dùng dấu ≤ nên đúng ngày cuối hạn VẪN còn bảo hành |
 | 6. Mức ưu tiên | Cao |
-| 7. Kết quả thực tế | _(điền bằng lời CỤ THỂ sau khi chạy: mã trạng thái, thông báo, số dòng trước/sau …)_ |
-| 8. PASS / FAIL | _(điền sau khi chạy)_ · ảnh: `docs/screenshots/TC-03.png` |
+| 7. Kết quả thực tế | **Lần 1 (trước khi sửa):** test báo ✖ — `AssertionError: false !== true`, `actual: false`, `expected: true`: `isUnderWarranty` trả `false` cho ngày 01/03/2027 09:00 (đúng ngày cuối hạn). Ảnh `TC-03-FAIL.png`. Gỡ lỗi → BUG-004. **Lần 2 (sau khi sửa, commit `6aea4b5`):** test báo ✔, hàm trả `true`. |
+| 8. PASS / FAIL | **FAIL lần 1 → PASS sau khi sửa BUG-004** · ảnh: `docs/screenshots/TC-03.png (và `TC-03-FAIL.png`)` |
 
 Lệnh chạy: `node --test --test-name-pattern="TC-03" tests/bt3/unit.test.js`
 
@@ -75,8 +77,8 @@ Lệnh chạy: `node --test --test-name-pattern="TC-03" tests/bt3/unit.test.js`
 | 4. Dữ liệu thử | `receivedAt = 02/03/2027 09:00` |
 | 5. Kết quả mong đợi | Trả về false (hết bảo hành) |
 | 6. Mức ưu tiên | Cao |
-| 7. Kết quả thực tế | _(điền bằng lời CỤ THỂ sau khi chạy: mã trạng thái, thông báo, số dòng trước/sau …)_ |
-| 8. PASS / FAIL | _(điền sau khi chạy)_ · ảnh: `docs/screenshots/TC-04.png` |
+| 7. Kết quả thực tế | Chạy lệnh ở trên, test báo ✔. `isUnderWarranty` (tiếp nhận 02/03/2027 09:00, sau hạn 1 ngày) trả `false`, khớp mong đợi. |
+| 8. PASS / FAIL | **PASS** · ảnh: `docs/screenshots/TC-04.png` |
 
 Lệnh chạy: `node --test --test-name-pattern="TC-04" tests/bt3/unit.test.js`
 
@@ -90,8 +92,8 @@ Lệnh chạy: `node --test --test-name-pattern="TC-04" tests/bt3/unit.test.js`
 | 4. Dữ liệu thử | `receivedAt = 2026-11-07T15:00:00+07:00; priority = CAO` |
 | 5. Kết quả mong đợi | Hạn = thứ Hai 09/11/2026 15:00 (+07), Chủ nhật không được tính |
 | 6. Mức ưu tiên | Trung bình |
-| 7. Kết quả thực tế | _(điền bằng lời CỤ THỂ sau khi chạy: mã trạng thái, thông báo, số dòng trước/sau …)_ |
-| 8. PASS / FAIL | _(điền sau khi chạy)_ · ảnh: `docs/screenshots/TC-05.png` |
+| 7. Kết quả thực tế | Chạy lệnh ở trên, test báo ✔. `computeDueDate` (thứ Bảy 07/11/2026 15:00 +07, mức CAO) trả thứ Hai 09/11/2026 15:00 +07, Chủ nhật được bỏ qua. |
+| 8. PASS / FAIL | **PASS** · ảnh: `docs/screenshots/TC-05.png` |
 
 Lệnh chạy: `node --test --test-name-pattern="TC-05" tests/bt3/unit.test.js`
 
@@ -105,8 +107,8 @@ Lệnh chạy: `node --test --test-name-pattern="TC-05" tests/bt3/unit.test.js`
 | 4. Dữ liệu thử | `issue_desc = "aaaaaaaaa" (9 ký tự); các trường khác hợp lệ` |
 | 5. Kết quả mong đợi | Ném lỗi status 400, code DU_LIEU_KHONG_HOP_LE, fields.issue_desc chứa "tối thiểu 10 ký tự" |
 | 6. Mức ưu tiên | Trung bình |
-| 7. Kết quả thực tế | _(điền bằng lời CỤ THỂ sau khi chạy: mã trạng thái, thông báo, số dòng trước/sau …)_ |
-| 8. PASS / FAIL | _(điền sau khi chạy)_ · ảnh: `docs/screenshots/TC-06.png` |
+| 7. Kết quả thực tế | Chạy lệnh ở trên, test báo ✔. Mô tả lỗi 9 ký tự bị từ chối: lỗi status 400, code `DU_LIEU_KHONG_HOP_LE`, `fields.issue_desc` chứa "tối thiểu 10 ký tự". |
+| 8. PASS / FAIL | **PASS** · ảnh: `docs/screenshots/TC-06.png` |
 
 Lệnh chạy: `node --test --test-name-pattern="TC-06" tests/bt3/unit.test.js`
 
@@ -120,8 +122,8 @@ Lệnh chạy: `node --test --test-name-pattern="TC-06" tests/bt3/unit.test.js`
 | 4. Dữ liệu thử | `{ customer_id: 1, device_id: 1 }` |
 | 5. Kết quả mong đợi | Ném lỗi status 400; fields.issue_desc = "Vui lòng mô tả lỗi" |
 | 6. Mức ưu tiên | Trung bình |
-| 7. Kết quả thực tế | _(điền bằng lời CỤ THỂ sau khi chạy: mã trạng thái, thông báo, số dòng trước/sau …)_ |
-| 8. PASS / FAIL | _(điền sau khi chạy)_ · ảnh: `docs/screenshots/TC-07.png` |
+| 7. Kết quả thực tế | Chạy lệnh ở trên, test báo ✔. Thiếu `issue_desc` bị từ chối: lỗi status 400, `fields.issue_desc` = "Vui lòng mô tả lỗi". |
+| 8. PASS / FAIL | **PASS** · ảnh: `docs/screenshots/TC-07.png` |
 
 Lệnh chạy: `node --test --test-name-pattern="TC-07" tests/bt3/unit.test.js`
 
@@ -135,8 +137,8 @@ Lệnh chạy: `node --test --test-name-pattern="TC-07" tests/bt3/unit.test.js`
 | 4. Dữ liệu thử | `{ customer_id: 1, device_id: 1, issue_desc: "Màn hình bị sọc ngang sau khi rơi", priority: "CAO", accessories: ["SAC"] }` |
 | 5. Kết quả mong đợi | Phiếu mã dạng BH-XXXXXX/YYYY; status MOI; is_warranty = true; hạn cách giờ nhận 24 hoặc 48 giờ và không rơi vào Chủ nhật; ticket_status_log đúng 1 dòng (from NULL → MOI, changed_by = 1) |
 | 6. Mức ưu tiên | Cao |
-| 7. Kết quả thực tế | _(điền bằng lời CỤ THỂ sau khi chạy: mã trạng thái, thông báo, số dòng trước/sau …)_ |
-| 8. PASS / FAIL | _(điền sau khi chạy)_ · ảnh: `docs/screenshots/TC-08.png` |
+| 7. Kết quả thực tế | Chạy lệnh ở trên, test báo ✔. Tạo phiếu mức CAO cho thiết bị id=1: `created = true`; mã phiếu khớp dạng `BH-XXXXXX/YYYY`; `status = MOI`; `is_warranty = true`; `acc_sac = true`; hạn cam kết cách giờ nhận đúng 24 hoặc 48 giờ và không rơi vào Chủ nhật; `ticket_status_log` có đúng 1 dòng (từ NULL → MOI, `changed_by` = 1). |
+| 8. PASS / FAIL | **PASS** · ảnh: `docs/screenshots/TC-08.png` |
 
 Lệnh chạy: `node --test --test-name-pattern="TC-08" tests/bt3/integration.test.js`
 
@@ -150,8 +152,8 @@ Lệnh chạy: `node --test --test-name-pattern="TC-08" tests/bt3/integration.te
 | 4. Dữ liệu thử | `{ customer_id: 1, device_id: 1, issue_desc: "Máy không lên nguồn nữa" }` |
 | 5. Kết quả mong đợi | Bị từ chối: status 409, code THIET_BI_DANG_CO_PHIEU_MO; số dòng ticket và ticket_status_log KHÔNG đổi |
 | 6. Mức ưu tiên | Cao |
-| 7. Kết quả thực tế | _(điền bằng lời CỤ THỂ sau khi chạy: mã trạng thái, thông báo, số dòng trước/sau …)_ |
-| 8. PASS / FAIL | _(điền sau khi chạy)_ · ảnh: `docs/screenshots/TC-09.png` |
+| 7. Kết quả thực tế | Chạy lệnh ở trên, test báo ✔. Tạo phiếu thứ hai cho thiết bị id=1 đang có phiếu `DANG_XU_LY`: bị từ chối với status 409, code `THIET_BI_DANG_CO_PHIEU_MO`. Đếm trước/sau: `ticket` 1 → 1, `ticket_status_log` 1 → 1 (không thêm bản ghi nào). |
+| 8. PASS / FAIL | **PASS** · ảnh: `docs/screenshots/TC-09.png` |
 
 Lệnh chạy: `node --test --test-name-pattern="TC-09" tests/bt3/integration.test.js`
 
@@ -165,8 +167,8 @@ Lệnh chạy: `node --test --test-name-pattern="TC-09" tests/bt3/integration.te
 | 4. Dữ liệu thử | `DATASET_DIR = data/sample` |
 | 5. Kết quả mong đợi | Cả hai lệnh thoát mã 0, không báo lỗi; số dòng mọi bảng giữ nguyên (không nhân đôi) |
 | 6. Mức ưu tiên | Cao |
-| 7. Kết quả thực tế | _(điền bằng lời CỤ THỂ sau khi chạy: mã trạng thái, thông báo, số dòng trước/sau …)_ |
-| 8. PASS / FAIL | _(điền sau khi chạy)_ · ảnh: `docs/screenshots/TC-10.png` |
+| 7. Kết quả thực tế | Chạy lệnh ở trên, test báo ✔. `migrate.js` và `seed.js` chạy lần thứ hai đều thoát mã 0, không báo lỗi; số dòng 5 bảng (`schema_migrations`, `service_center`, `issue_category`, `technician`, `employee`) trước và sau bằng nhau. |
+| 8. PASS / FAIL | **PASS** · ảnh: `docs/screenshots/TC-10.png` |
 
 Lệnh chạy: `node --test --test-name-pattern="TC-10" tests/bt3/integration.test.js`
 
@@ -180,8 +182,8 @@ Lệnh chạy: `node --test --test-name-pattern="TC-10" tests/bt3/integration.te
 | 4. Dữ liệu thử | `to_status = DA_HUY` |
 | 5. Kết quả mong đợi | Bước 1 và 2: 404 KHONG_TIM_THAY; bước 3: 403 KHONG_DU_QUYEN; bước 4: 401; phiếu vẫn MOI, ticket_status_log vẫn 1 dòng |
 | 6. Mức ưu tiên | Cao |
-| 7. Kết quả thực tế | _(điền bằng lời CỤ THỂ sau khi chạy: mã trạng thái, thông báo, số dòng trước/sau …)_ |
-| 8. PASS / FAIL | _(điền sau khi chạy)_ · ảnh: `docs/screenshots/TC-11.png` |
+| 7. Kết quả thực tế | Chạy lệnh ở trên, test báo ✔. Phiếu của trung tâm 1: KTV trung tâm 2 gọi GET → 404 `KHONG_TIM_THAY`, gọi PATCH → 404; Nhân viên tiếp nhận gọi PATCH → 403 `KHONG_DU_QUYEN`; không kèm token → 401. Sau đó phiếu vẫn ở `MOI`, `ticket_status_log` vẫn 1 dòng. |
+| 8. PASS / FAIL | **PASS** · ảnh: `docs/screenshots/TC-11.png` |
 
 Lệnh chạy: `node --test --test-name-pattern="TC-11" tests/bt3/api.test.js`
 
@@ -195,8 +197,8 @@ Lệnh chạy: `node --test --test-name-pattern="TC-11" tests/bt3/api.test.js`
 | 4. Dữ liệu thử | `{ customer_id: 1, device_id: 1, issue_desc: "Pin sụt nhanh, sạc không vào điện", priority: "THAP" }` |
 | 5. Kết quả mong đợi | 201; data.ticket_code dạng BH-XXXXXX/YYYY; status MOI; priority THAP; ticket có 1 dòng; GET trả 200 với customer_phone dạng 090****567 (che số) |
 | 6. Mức ưu tiên | Cao |
-| 7. Kết quả thực tế | _(điền bằng lời CỤ THỂ sau khi chạy: mã trạng thái, thông báo, số dòng trước/sau …)_ |
-| 8. PASS / FAIL | _(điền sau khi chạy)_ · ảnh: `docs/screenshots/TC-12.png` |
+| 7. Kết quả thực tế | Chạy lệnh ở trên, test báo ✔. POST `/api/tickets` → 201; mã phiếu khớp `BH-XXXXXX/YYYY`; `status = MOI`; `priority = THAP`; bảng `ticket` có 1 dòng. GET chi tiết → 200, `customer_phone` đã che theo dạng `090****567`. |
+| 8. PASS / FAIL | **PASS** · ảnh: `docs/screenshots/TC-12.png` |
 
 Lệnh chạy: `node --test --test-name-pattern="TC-12" tests/bt3/api.test.js`
 
@@ -210,7 +212,7 @@ Lệnh chạy: `node --test --test-name-pattern="TC-12" tests/bt3/api.test.js`
 | 4. Dữ liệu thử | `purchase_date = 31/08/2026; warranty_months = 6` |
 | 5. Kết quả mong đợi | Bước 1: true; bước 2: false |
 | 6. Mức ưu tiên | Trung bình |
-| 7. Kết quả thực tế | _(điền bằng lời CỤ THỂ sau khi chạy: mã trạng thái, thông báo, số dòng trước/sau …)_ |
-| 8. PASS / FAIL | _(điền sau khi chạy)_ · ảnh: `docs/screenshots/TC-13.png` |
+| 7. Kết quả thực tế | **Lần 1 (trước khi sửa):** test báo ✖ — `AssertionError: true !== false`, `actual: true`, `expected: false`: với thiết bị mua 31/08/2026 + 6 tháng, ngày 02/03/2027 vẫn bị tính là còn bảo hành (hạn thật là 28/02/2027). Ảnh `TC-13-FAIL.png`. **Lần 2 (sau khi sửa BUG-004, commit `6aea4b5`):** test báo ✔, ngày 28/02/2027 → `true`, ngày 02/03/2027 → `false`. |
+| 8. PASS / FAIL | **FAIL lần 1 → PASS sau khi sửa BUG-004** · ảnh: `docs/screenshots/TC-13.png (và `TC-13-FAIL.png`)` |
 
 Lệnh chạy: `node --test --test-name-pattern="TC-13" tests/bt3/regression.test.js`
