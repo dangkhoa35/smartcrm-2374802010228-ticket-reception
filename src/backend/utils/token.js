@@ -10,8 +10,8 @@ class TokenError extends Error {
 
 function secret() {
   const s = process.env.JWT_SECRET;
-  if (!s || s.length < 16) {
-    throw new Error('JWT_SECRET chưa cấu hình hoặc ngắn hơn 16 ký tự. Xem .env.example');
+  if (!s || s.length < 32) {
+    throw new Error('JWT_SECRET chưa cấu hình hoặc ngắn hơn 32 ký tự. Xem .env.example');
   }
   return s;
 }

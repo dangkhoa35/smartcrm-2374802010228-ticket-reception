@@ -160,7 +160,7 @@ Cần Docker Desktop đang chạy. Dừng `npm run dev` (nếu có) để khỏi
 Copy-Item .env.example .env
 docker compose up -d --build
 ```
-Trên macOS/Linux/Git Bash, lệnh đầu là `cp .env.example .env`. Có thể giữ nguyên các giá trị mẫu trong `.env` để chạy thử trên máy cá nhân; muốn dùng mật khẩu riêng thì đổi `DB_PASSWORD` (không dùng ký tự `@ : / # ?`). `.env` còn phải có `JWT_SECRET` (khoá ký phiên đăng nhập, tối thiểu 16 ký tự): nếu `.env` cũ thiếu dòng này, `docker compose` dừng với thông báo "Thiếu JWT_SECRET"; chép dòng đó từ `.env.example`. Đăng nhập bằng một trong 3 tài khoản mẫu ở mục 6.1.
+Trên macOS/Linux/Git Bash, lệnh đầu là `cp .env.example .env`. Có thể giữ nguyên các giá trị mẫu trong `.env` để chạy thử trên máy cá nhân; muốn dùng mật khẩu riêng thì đổi `DB_PASSWORD` (không dùng ký tự `@ : / # ?`). `.env` còn phải có `JWT_SECRET` (khoá ký phiên đăng nhập, tối thiểu 32 ký tự): nếu `.env` cũ thiếu dòng này, `docker compose` dừng với thông báo "Thiếu JWT_SECRET"; chép dòng đó từ `.env.example`. Đăng nhập bằng một trong 3 tài khoản mẫu ở mục 6.1.
 
 Lần dựng đầu mất vài phút. Kiểm tra bằng `docker compose ps -a`: `db`, `api`, `web` phải ở trạng thái **healthy**; `init` (nạp dữ liệu một lần) ở trạng thái **Exited (0)** là bình thường.
 
@@ -257,14 +257,14 @@ PORT=3000
 DATABASE_URL=postgresql://smartcrm:mat-khau-cua-ban@localhost:5432/smartcrm
 CORS_ORIGIN=http://localhost:5173
 DATASET_DIR=data/sample
-JWT_SECRET=doi_khoa_bi_mat_nay_toi_thieu_16_ky_tu
+JWT_SECRET=doi-khoa-nay-thanh-chuoi-ngau-nhien-it-nhat-32-ky-tu
 REGISTER_CODE_KY_THUAT_VIEN=KTV-2026
 REGISTER_CODE_QUAN_LY=QL-2026
 ```
 - `DATABASE_URL`: thay `doi_mat_khau_nay` bằng đúng mật khẩu đã đặt ở Bước 3.
 - `DATASET_DIR=data/sample`: dòng này trong `.env.example` đang bị comment (`# DATASET_DIR=...`); **xóa dấu `#`** và đặt giá trị như trên để nạp bộ mẫu nhỏ có sẵn trong repo (xem Bước 5).
-- `CORS_ORIGIN` phải đúng địa chỉ mở giao diện, mặc định `http://localhost:5173`.
-- `JWT_SECRET`: **bắt buộc**, tối thiểu 16 ký tự; backend dùng để ký mã phiên đăng nhập. Thiếu hoặc quá ngắn thì đăng nhập báo "Hệ thống đang gặp sự cố" và log backend ghi rõ lý do. Khi triển khai thật hãy đặt chuỗi ngẫu nhiên của riêng bạn.
+- `CORS_ORIGIN` (có thể là danh sách, cách nhau bằng dấu phẩy) phải đúng địa chỉ mở giao diện, mặc định `http://localhost:5173`.
+- `JWT_SECRET`: **bắt buộc**, tối thiểu 32 ký tự; backend dùng để ký mã phiên đăng nhập. Thiếu hoặc quá ngắn thì đăng nhập báo "Hệ thống đang gặp sự cố" và log backend ghi rõ lý do. Khi triển khai thật hãy đặt chuỗi ngẫu nhiên của riêng bạn.
 - `REGISTER_CODE_KY_THUAT_VIEN`, `REGISTER_CODE_QUAN_LY`: mã đăng ký cho hai vai trò quyền cao (mục 6.1). Để trống thì không ai tự đăng ký được vai trò đó.
 
 Tệp **`src/frontend/.env`** chỉ cần một dòng (đã có sẵn khi sao chép):
@@ -322,10 +322,10 @@ Chưa có tài khoản riêng? Bấm **Đăng ký** ở màn đăng nhập.
 #### Bước 9 – Chạy kiểm thử
 Kiểm thử **không cần PostgreSQL hay backend đang chạy**:
 ```bash
-npm test                          # tại thư mục gốc: 78 test backend (node --test)
+npm test                          # tại thư mục gốc: 96 test backend (node --test)
 npm test --prefix src/frontend    # 48 test giao diện (vitest)
 ```
-Kết quả đúng: backend `pass 78`, `fail 0`; giao diện `Tests 48 passed (48)`. Bản dựng sản xuất của giao diện: `npm run build --prefix src/frontend` (ra `src/frontend/dist/`).
+Kết quả đúng: backend `pass 96`, `fail 0`; giao diện `Tests 48 passed (48)`. Bản dựng sản xuất của giao diện: `npm run build --prefix src/frontend` (ra `src/frontend/dist/`).
 
 #### Gọi thử API bằng curl / Postman
 ```bash
@@ -412,7 +412,7 @@ Vai trò, mã nhân viên và trung tâm của người gọi lấy **từ token
 - [x] **Buổi 11:** bộ dữ liệu mẫu nhỏ `data/sample/` có trong repo; `.env.example` liệt kê đủ biến; tệp khoá `package-lock.json` ở cả hai gói; `.nvmrc` ghi phiên bản Node
 - [x] **Buổi 11:** nhật ký JSON ra stdout có `requestId`, che dữ liệu nhạy cảm; một bộ xử lý lỗi duy nhất (lỗi nghiệp vụ ghi INFO, lỗi hệ thống ghi ERROR một lần kèm mã tra cứu); mất kết nối CSDL trả `503` (mục 6.3)
 - [x] **Buổi 11:** `docs/bug-log.md` ghi 3 lỗi đã gỡ, mỗi lỗi có test hồi quy FAIL trước, PASS sau
-- [x] 78 test backend (`npm test` ở thư mục gốc) và 48 test giao diện (`npm test` trong `src/frontend`), gồm luồng đúng, giá trị biên, dữ liệu sai và luồng lỗi 409/422/503
+- [x] 96 test backend (`npm test` ở thư mục gốc) và 48 test giao diện (`npm test` trong `src/frontend`), gồm luồng đúng, giá trị biên, dữ liệu sai và luồng lỗi 409/422/503
 - [x] Đăng nhập / đăng ký thật: mật khẩu băm scrypt, phiên JWT 30 phút, 3 vai trò, tài khoản mẫu (xem mục 6.1 và TD-12)
 - [ ] Đề xuất nhóm sự cố từ mô tả (US4) – hoãn (TD-10)
 - [ ] Lọc `overdue`/`assignee_id`/serial; lịch sử trạng thái trên màn chi tiết; lịch sử thiết bị và cảnh báo lỗi lặp lại (US7) – hoãn (TD-11)

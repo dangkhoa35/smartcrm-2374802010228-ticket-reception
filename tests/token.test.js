@@ -45,3 +45,12 @@ test('thiếu hoặc quá ngắn JWT_SECRET: ném lỗi cấu hình rõ ràng, k
   assert.throws(() => signToken(CLAIMS, T0), /JWT_SECRET/);
   process.env.JWT_SECRET = old;
 });
+
+test('JWT_SECRET phải dài tối thiểu 32 ký tự: 31 bị từ chối, 32 được chấp nhận', () => {
+  const old = process.env.JWT_SECRET;
+  process.env.JWT_SECRET = 'a'.repeat(31);
+  assert.throws(() => signToken(CLAIMS, T0), /JWT_SECRET/);
+  process.env.JWT_SECRET = 'a'.repeat(32);
+  assert.doesNotThrow(() => signToken(CLAIMS, T0));
+  process.env.JWT_SECRET = old;
+});
