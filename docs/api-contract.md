@@ -11,7 +11,7 @@
 |---|---|
 | **Base URL** | `/api`; dữ liệu JSON UTF-8; yêu cầu có body dùng `Content-Type: application/json`. Đường dẫn kiểm tra sống: `GET /health` trả `{"status":"ok"}`. |
 | **Xác thực** | `Authorization: Bearer <token>`; token là JWT (HS256) lấy từ EP11, **hết hạn sau 30 phút** (NFR2). Vai trò, `employee_id`, `center_id` của người thao tác lấy từ token do máy chủ ký, không nhận từ header hay body. Thiếu token hoặc token sai chữ ký trả `401 CHUA_XAC_THUC`, token hết hạn trả `401 PHIEN_HET_HAN`. Nhóm `/api/auth/*` (EP11–EP13) công khai, không cần token. Header `x-role`, `x-employee-id`, `x-center-id` của Sprint 1 **đã bỏ** (mục 1.15). |
-| **CORS** | Máy chủ chỉ cho phép trình duyệt từ nguồn đặt trong biến môi trường `CORS_ORIGIN` (mặc định `http://localhost:5173`, cổng của Vite). Công cụ như curl và Postman không bị ảnh hưởng. |
+| **CORS** | Máy chủ chỉ cho phép trình duyệt từ nguồn đặt trong biến môi trường `CORS_ORIGIN` (danh sách cách nhau bằng dấu phẩy; mặc định `http://localhost:5173`, cổng của Vite). Công cụ như curl và Postman không bị ảnh hưởng. |
 | **Vai trò** | `NHAN_VIEN_TIEP_NHAN` (Nhân viên tiếp nhận), `QUAN_LY_TRUNG_TAM` (Quản lý trung tâm), `KY_THUAT_VIEN` (Kỹ thuật viên). Mỗi endpoint kiểm tra vai trò trước khi xử lý; sai vai trò trả `403 KHONG_DU_QUYEN`. |
 | **Phạm vi trung tâm** | Trung tâm của người thao tác (`center_id`) lấy từ token đăng nhập, **không nhận từ body**. Danh sách và chi tiết phiếu chỉ trả phiếu của trung tâm đó; phiếu của trung tâm khác trả `404 KHONG_TIM_THAY` để không tiết lộ dữ liệu. |
 | **Tên trường** | `snake_case`, thống nhất với DDL: `customer_id`, `device_id`, `center_id`, `ticket_code`, `issue_desc`, `category_id`, `priority`, `due_date`. |
@@ -72,6 +72,7 @@
 | EP11 | `POST` | `/api/auth/login` | Đăng nhập, nhận token | Công khai | Hỗ trợ NFR2 | Đã làm (BT2) |
 | EP12 | `POST` | `/api/auth/register` | Đăng ký tài khoản | Công khai | Hỗ trợ NFR2 | Đã làm (BT2) |
 | EP13 | `GET` | `/api/auth/centers` | Danh sách trung tâm cho ô chọn ở trang đăng ký | Công khai | Hỗ trợ EP12 | Đã làm (BT2) |
+| EP0 | `GET` | `/health` | Kiểm tra máy chủ còn sống (dùng cho healthcheck và phép thử "Verify it works") | Công khai | Hỗ trợ NFR (vận hành) | Đã làm |
 
 **Truy vết tổng quát:** US1 → FR1 → UC1; US2 → FR2 → UC2; US3 → FR3 → UC3; US4 → FR4 → UC4; US5 → FR5 → UC5; US6 → FR6 → UC6; US7 → FR7 → UC7.
 
@@ -557,6 +558,17 @@ Ba endpoint này **công khai**, gắn trước bước xác thực. Mã nguồn
 ### EP13 – GET `/api/auth/centers`
 
 `200`: `{"data":[{"center_id":1,"center_code":"TT01","center_name":"TTBH Quận 10","city":"TP. Hồ Chí Minh"}, ...]}`. Chỉ để đổ ô chọn trung tâm ở trang đăng ký.
+
+### EP0 – GET `/health`
+
+| Mục | Nội dung |
+|---|---|
+| **Mô tả** | Cho biết tiến trình API đang chạy. Không kiểm tra CSDL. |
+| **Xác thực** | Không cần token; công khai, gắn trước bước xác thực (`app.js`). |
+| **Tham số** | Không có. |
+| **Thành công** | `200`: `{"status":"ok"}` (ví dụ chạy thật: `curl.exe -s http://localhost:3000/health`). |
+| **Lỗi** | Không có mã lỗi nghiệp vụ. Nếu máy chủ không chạy thì không có phản hồi (lỗi kết nối). |
+| **Ghi chú** | Dùng để xác nhận hệ thống lên được sau `docker compose up`. Việc kiểm tra CSDL do `healthcheck` của dịch vụ `db` trong `docker-compose.yml` đảm nhiệm. |
 
 ### Thay đổi so với v1.4 (BT2)
 

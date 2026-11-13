@@ -1,5 +1,5 @@
 # Tổng kết công cụ AI và quy trình áp dụng
-Ngày 19/10/2026 · Họ tên: Hà Đăng Khoa · MSSV: 2374802010228
+Ngày 13/11/2026 · Họ tên: Hà Đăng Khoa · MSSV: 2374802010228
 
 | Công cụ AI | Phần áp dụng | Cách dùng (tóm tắt yêu cầu đã gửi) | Em đã kiểm chứng / chỉnh sửa gì |
 |---|---|---|---|
@@ -21,7 +21,9 @@ Ngày 19/10/2026 · Họ tên: Hà Đăng Khoa · MSSV: 2374802010228
 | **Claude** | Buổi 11 – tài liệu (`README.md`, `docs/bug-log.md`) | Nhờ viết lại README cho cách chạy bằng Docker và nhật ký lỗi | Em đối chiếu từng lệnh, cổng và số liệu với kết quả chạy thật trên máy mình, điền liên kết commit vào bug log. |
 | **Claude** | BT2 – đăng nhập / đăng ký (`utils/password.js`, `utils/token.js`, `services/auth.service.js`, `routes/auth.routes.js`, `validators/auth.schema.js`, `middlewares/actor.js`, migration `003`, `seed.js`, `LoginPage.jsx`, `RegisterPage.jsx`, `session.js`, `client.js`, các test `password`, `token`, `auth.*`, `actor`, `loginPage`, `registerPage`) | Nhờ thiết kế và soạn mã đăng nhập 3 vai trò, đăng ký, JWT 30 phút, băm mật khẩu, khoá khi sai nhiều lần | Em chạy `migrate`/`seed` hai lần, đăng nhập đủ 3 vai trò, thử sai mật khẩu, sai vai trò, token giả, hết hạn và 6 lần sai liên tiếp; đọc từng hàm để giải thích được; chạy `npm test` hai gói. |
 | **Antigravity** | Rà soát repo trước khi push | Gửi prompt kiểm tra checklist buổi 8 (chỉ đọc, không sửa) | Em tự đọc từng mục FAIL/WARN, quyết định sửa; bỏ qua cảnh báo không áp dụng (ví dụ tệp PDF BT1 là bài nộp). |
-
+| **Claude** | BT3 – rà soát bảo mật theo checklist buổi 15 (`docs/checklist-bao-mat.md`) | Gửi tài liệu tự học buổi 15, slide buổi 16 và repo, nhờ đối chiếu mã với checklist 7 mục và bảng tiêu chí C1–C9 | Em tự chạy ba lệnh `git grep` (SQL, `innerHTML`, `exec`), `git log --all -- .env` và quét mật khẩu CSDL trong lịch sử Git, chụp ảnh `SEC-01`, `SEC-02`; đọc từng kết quả để giải thích vì sao 4 dòng SQL và 1 dòng `.exec` an toàn. |
+| **Claude** | BT3 – sửa bảo mật (`utils/token.js`, `app.js`, `tests/token.test.js`, `tests/cors.test.js`, `.env.example`) | Nhờ soạn bản vá: `JWT_SECRET` tối thiểu 32 ký tự, CORS nhận danh sách nguồn từ `CORS_ORIGIN`, kèm test | Em áp dụng bản vá bằng `git apply`, đọc từng thay đổi, chạy `npm test` (96 test backend đạt) và `npm test --prefix src/frontend` (48 test đạt), chụp ảnh. [Em bổ sung: điều em tự thử, ví dụ gọi API với Origin lạ] |
+| **Claude** | BT3 – Deployment Guide và checklist bảo mật (`docs/deployment-guide.md`, `docs/checklist-bao-mat.md`), `api-contract.md` (thêm EP0 `/health`) | Nhờ soạn nháp tài liệu theo mẫu buổi 15 và đối chiếu với README, `docker-compose.yml` | [Em bổ sung sau khi làm xong: em chạy phép thử máy trắng theo Guide, ghi lệnh còn thiếu, đối chiếu từng biến môi trường và minh chứng với repo thật] |
 
 | Công cụ AI | Công việc | Áp dụng ở phần nào | Kiểm chứng / chỉnh sửa |
 |---|---|---|---|
