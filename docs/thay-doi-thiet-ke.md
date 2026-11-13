@@ -84,3 +84,36 @@
 - Quyết định: GIỮ NGUYÊN thiết kế và mã của BT2, không sửa theo phản hồi.
 - Lý do: Không có nhận xét cần xử lý. Tuy vậy phản hồi tốt không có nghĩa là không còn lỗi: bộ test BT3 (buổi 13–14) kiểm các tình huống biên mà BT2 chưa kiểm; lỗi tìm thấy khi kiểm thử được ghi ở `docs/bug-log.md`, không ghi ở đây.
 - Ảnh hưởng: Không đổi `api-contract.md` hay cấu trúc. Giữ cách làm đã được khen cho BT3: ảnh minh chứng chụp từ bản clone theo tag (`v1.0`).
+
+
+## Sau rà soát bảo mật và đóng gói (buổi 15–16, ngày 13/11/2026)
+
+### TD-14 Nâng ngưỡng JWT_SECRET từ 16 lên 32 ký tự
+- Phát hiện khi: rà soát bảo mật theo checklist buổi 15 (mục 1 và mục JWT của tài liệu tự học).
+- Quyết định: SỬA
+- Lý do: Khoá ký ngắn dễ bị đoán; tài liệu buổi 15 yêu cầu tối thiểu 32 ký tự và hệ thống phải dừng khi khoá thiếu hoặc quá ngắn.
+- Ảnh hưởng: `utils/token.js` (ngưỡng và thông báo lỗi), `.env.example` (giá trị mẫu dài 52 ký tự), `README.md`, `tests/token.test.js` (thêm test: 31 ký tự bị từ chối, 32 ký tự được nhận). `.env` cũ có `JWT_SECRET` ngắn hơn 32 ký tự phải đổi, nếu không API không khởi động được.
+
+### TD-15 CORS nhận danh sách nguồn lấy từ biến môi trường
+- Phát hiện khi: rà soát bảo mật theo mục CORS của tài liệu tự học buổi 15.
+- Quyết định: SỬA
+- Lý do: Cấu hình cũ chỉ nhận một nguồn; khi triển khai ở địa chỉ khác hoặc thêm nguồn phải sửa mã. Danh sách nguồn nay lấy từ `CORS_ORIGIN` (cách nhau bằng dấu phẩy), không bao giờ dùng `*`; nguồn lạ không được cấp header CORS. CORS chỉ là cơ chế của trình duyệt, việc chặn truy cập vẫn do xác thực JWT đảm nhiệm.
+- Ảnh hưởng: `app.js`; thêm `tests/cors.test.js` (4 test); `.env.example`, `README.md` và `api-contract.md` ghi rõ `CORS_ORIGIN` có thể là danh sách.
+
+### TD-16 Ghi EP0 `GET /health` vào tài liệu API
+- Phát hiện khi: đối chiếu số route trong mã với số endpoint trong tài liệu (tiêu chí C9).
+- Quyết định: SỬA (chỉ sửa tài liệu, mã đã có từ trước)
+- Lý do: `/health` có trong `app.js` và được dùng ở bước "Verify it works", nhưng chưa có trong bảng endpoint của `api-contract.md`.
+- Ảnh hưởng: `api-contract.md` thêm EP0 (đánh số 0 để giữ nguyên EP1–EP13); không đổi mã.
+
+### TD-17 Hoãn nâng zod lên v4
+- Phát hiện khi: chạy `npm audit --omit=dev` cho mục 7 của checklist bảo mật.
+- Quyết định: HOÃN
+- Lý do: Có 1 cảnh báo mức cao ở `zod` (GHSA-mrhx-c7xc-m3w5, cạn bộ nhớ khi kiểm tra tập rất lớn). Bản vá cần v4, là thay đổi phá vỡ: các schema đang dùng `required_error`, `invalid_type_error`, `errorMap` của v3. Rủi ro thực tế thấp vì `express.json()` giới hạn thân yêu cầu mặc định 100 KB và mảng duy nhất (`accessories`) đã bị giới hạn bằng `z.enum`. Không nên đổi lõi kiểm tra đầu vào sát hạn nộp.
+- Ảnh hưởng: Không đổi mã; ghi trung thực ở mục 7 của `checklist-bao-mat.md` (ĐÃ LÀM MỘT PHẦN) kèm ảnh `SEC-07-*`.
+
+### TD-18 Bổ sung tài liệu đóng gói và đồng bộ README
+- Phát hiện khi: đối chiếu với bảng tiêu chí kỹ thuật BT3 (C1, C5, C6, C9) và phép thử máy trắng.
+- Quyết định: SỬA
+- Lý do: Chưa có Deployment Guide và checklist bảo mật; README còn ghi số test cũ và "kiểm thử không cần PostgreSQL" trong khi bộ test BT3 dùng CSDL `smartcrm_test`.
+- Ảnh hưởng: thêm `docs/deployment-guide.md` (tiếng Anh, 5 mục) và `docs/checklist-bao-mat.md`; `README.md` cập nhật số test (backend 96, giao diện 48) và điều kiện chạy test; ảnh minh chứng `PT-01` đến `PT-05` từ phép thử máy trắng.
