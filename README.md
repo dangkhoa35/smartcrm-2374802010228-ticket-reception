@@ -60,7 +60,7 @@ Có hai cách chạy. **Cách A (khuyến nghị)** không cần cài Node hay P
 | Kiểm thử backend | Bộ chạy test có sẵn của Node.js (`node --test`) | Đang dùng |
 | Kiểm thử frontend | Vitest, Testing Library, jsdom | Đang dùng |
 | Đóng gói | Docker, Docker Compose (Dockerfile nhiều giai đoạn; nginx phục vụ giao diện) | Đang dùng |
-| Tài liệu API | `docs/api-contract.md`; Swagger UI | Markdown đã có; Swagger dự kiến |
+| Tài liệu API | `docs/api-contract.md`; Swagger UI | Markdown đã có
 
 ---
 
