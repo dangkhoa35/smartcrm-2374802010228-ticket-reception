@@ -20,11 +20,13 @@ const ROW = () => ({ employee_id: '3', full_name: 'Quản lý Mẫu', role: 'QUA
 const IN = { username: 'quanly', password: 'Quanly@123' };
 const NOW = Date.UTC(2026, 9, 30, 8, 0, 0);
 
-test('EP11 luồng đúng: vai trò lấy từ tài khoản, token mang đúng vai trò, mã nhân viên, trung tâm; không lộ băm mật khẩu', async () => {
+test('EP11 luồng đúng: vai trò lấy từ tài khoản, token chỉ mang mã, vai trò, trung tâm và thời hạn (không có họ tên); không lộ băm mật khẩu', async () => {
   accountRepo.findByUsername = async () => ROW();
   const r = await svc.login(IN, NOW);
   const p = verifyToken(r.token, NOW + 1000);
   assert.deepEqual([p.sub, p.role, p.cid], [3, 'QUAN_LY_TRUNG_TAM', 1]);
+  assert.deepEqual(Object.keys(p).sort(), ['cid', 'exp', 'iat', 'role', 'sub']); // không có name, usr
+  assert.equal(typeof r.user.full_name, 'string'); // họ tên chỉ nằm trong user của phản hồi
   assert.equal(r.expires_at, new Date(NOW + 1800 * 1000).toISOString());
   assert.equal(r.user.password_hash, undefined);
   assert.equal(JSON.stringify(r).includes('scrypt$'), false);

@@ -52,7 +52,7 @@ async function login({ username, password }, now = Date.now()) {
   attempts.delete(username);
   const user = toUser(row);
   const token = signToken(
-    { sub: user.employee_id, role: user.role, cid: user.center_id, name: user.full_name, usr: user.username }, now);
+    { sub: user.employee_id, role: user.role, cid: user.center_id }, now); // token chỉ chứa mã, vai trò, trung tâm; họ tên và tên đăng nhập trả trong `user` của phản hồi
   return { token, expires_at: new Date(now + TTL_SECONDS * 1000).toISOString(), user };
 }
 

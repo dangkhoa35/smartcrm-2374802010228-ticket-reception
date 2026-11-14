@@ -9,7 +9,7 @@ module.exports = function actor(req, res, next) {
   if (!m) return next(new AppError(401, 'CHUA_XAC_THUC', 'Vui lòng đăng nhập'));
   try {
     const p = verifyToken(m[1]);
-    req.actor = { role: p.role, employeeId: Number(p.sub), centerId: Number(p.cid), fullName: p.name };
+    req.actor = { role: p.role, employeeId: Number(p.sub), centerId: Number(p.cid) };
     return next();
   } catch (e) {
     if (e instanceof TokenError) {
