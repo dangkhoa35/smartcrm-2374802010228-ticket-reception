@@ -23,7 +23,7 @@ Phân hệ L2 – Tiếp nhận và phân loại yêu cầu bảo hành. Chạy 
 | # | Tình huống | Đầu vào | Kết quả quan sát | API | Ảnh |
 |---|---|---|---|---|---|
 | L1 | Thiết bị hết bảo hành, mã phê duyệt sai | Khách `hà dang khoa` (090****368), thiết bị `iphone 12` (serial `IP124NS31`, ngày mua 25/10/2026, bảo hành 0 tháng), mã Quản lý phê duyệt `99999`, mô tả `vỡ màn hình`, nhóm Màn hình | Hiện "Hết bảo hành"; lỗi nằm ngay dưới ô mã phê duyệt: "Mã phê duyệt không phải của một Quản lý trung tâm thuộc trung tâm này" (không còn báo "Hệ thống đang gặp sự cố") | EP4 (`422 NGUOI_PHE_DUYET_KHONG_HOP_LE`) | `buoi10-loi_BH.png` |
-| L2 | Backend không chạy | Tắt backend, mở `/tickets` | Khung lỗi "Không tải được dữ liệu – Không kết nối được tới hệ thống. Kiểm tra mạng và bảo đảm máy chủ đang chạy, rồi bấm Thử lại" kèm nút **Thử lại** | – | `buoi10-loi_backend.png` |
+| L2 | Backend không chạy | Tắt backend, mở `/tickets` | Khung lỗi "Không tải được dữ liệu – Không kết nối được tới hệ thống. Kiểm tra mạng và bảo đảm máy chủ đang chạy, rồi bấm Thử lại" kèm nút **Thử lại** | – | `buoi10-loi-backend.png` |
 
 ## 3. Chỗ đứt gãy phát hiện khi tích hợp
 
