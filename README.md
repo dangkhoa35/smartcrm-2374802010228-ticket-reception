@@ -60,7 +60,7 @@ Có hai cách chạy. **Cách A (khuyến nghị)** không cần cài Node hay P
 | Kiểm thử backend | Bộ chạy test có sẵn của Node.js (`node --test`) | Đang dùng |
 | Kiểm thử frontend | Vitest, Testing Library, jsdom | Đang dùng |
 | Đóng gói | Docker, Docker Compose (Dockerfile nhiều giai đoạn; nginx phục vụ giao diện) | Đang dùng |
-| Tài liệu API | `docs/api-contract.md`; Swagger UI | Markdown đã có
+| Tài liệu API | `docs/api-contract.md`; không dùng Swagger; bảy mục cho mỗi endpoint | đã có
 
 ---
 
@@ -217,7 +217,7 @@ Windows báo `psql` không tồn tại: thêm `C:\Program Files\PostgreSQL\16\bi
 git clone https://github.com/dangkhoa35/smartcrm-2374802010228-ticket-reception.git
 cd smartcrm-2374802010228-ticket-reception
 ```
-Chấm bài theo tag nộp: thêm `--branch v0.2` vào lệnh `git clone`.
+Chấm bài theo tag nộp: thêm `--branch v1.0` vào lệnh `git clone`.
 
 #### Bước 2 – Cài thư viện
 Dùng `npm ci` (không dùng `npm install`) để đúng phiên bản trong `package-lock.json`:
@@ -320,8 +320,9 @@ Mở **http://localhost:5173** (đúng cổng này, vì CORS chỉ cho phép `CO
 Chưa có tài khoản riêng? Bấm **Đăng ký** ở màn đăng nhập.
 
 #### Bước 9 – Chạy kiểm thử
-Kiểm thử **không cần PostgreSQL hay backend đang chạy**:
+Bộ test backend dùng PostgreSQL thật (CSDL riêng `smartcrm_test`), nên bật CSDL trước; test giao diện không cần backend:
 ```bash
+docker compose up -d db           # đợi db healthy
 npm test                          # tại thư mục gốc: 96 test backend (node --test)
 npm test --prefix src/frontend    # 48 test giao diện (vitest)
 ```

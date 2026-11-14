@@ -1,6 +1,6 @@
 # Test Report — Luồng L2 (track SE)
 
-> **Ngày chạy:** 06/11/2026 (buổi 14). **Tổng kết:** 13 test case — 11 PASS ngay lần chạy đầu; TC-03 và TC-13 FAIL lần đầu (lộ BUG-004), sau khi sửa (commit `6aea4b5`) cả hai PASS; `npm test` toàn bộ: 91/91 PASS.
+> **Ngày chạy:** 06/11/2026 (buổi 14). **Tổng kết:** 13 test case — 11 PASS ngay lần chạy đầu; TC-03 và TC-13 FAIL lần đầu (lộ BUG-004), sau khi sửa (commit `6aea4b5`) cả hai PASS; `npm test` toàn bộ: 91/91 PASS. Chạy lại ngày 13/11/2026 sau khi sửa bảo mật: backend 96/96, giao diện 48/48
 
 > Mỗi test case có đủ 8 cột. Kết quả thực tế ghi theo lần chạy thật ngày 06/11/2026, kèm ảnh chụp trong `docs/screenshots/`. FAIL được giữ nguyên ở lần chạy đầu, sau đó sửa và chạy lại (xem Bug Log BUG-004).
 

@@ -15,6 +15,6 @@ Cách điền: ĐÃ LÀM / CHƯA LÀM / KHÔNG ÁP DỤNG, kèm một dòng minh
 
 ## Kiểm tra bổ sung
 
-- Đường dẫn tuyệt đối trong mã (`git grep -nF -e 'C:\' -e '/home/' -e '/Users/' -- src/`): [điền kết quả, ảnh `SEC-08-duong-dan.png`].
+- Đường dẫn tuyệt đối trong mã (`git grep -nF -e 'C:\' -e '/home/' -e '/Users/' -- src/`): **rỗng**, không có đường dẫn nào gắn với máy cá nhân (ảnh `SEC-08-duong-dan.png`).
 - CORS chỉ mở cho các nguồn trong `CORS_ORIGIN`, không dùng `*`: `src/backend/app.js`, `tests/cors.test.js` (4 test).
 - Kết quả test sau khi sửa bảo mật: backend 96/96 (`TEST-backend-96-pass.png`), giao diện 48/48 (`TEST-frontend-48-pass.png`).
