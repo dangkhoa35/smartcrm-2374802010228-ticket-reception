@@ -1,7 +1,9 @@
 name: CI
+
 on: [push, pull_request]
+
 jobs:
-  test:
+  backend:
     runs-on: ubuntu-latest
     services:
       db:
@@ -19,3 +21,32 @@ jobs:
         with: { node-version: '22', cache: 'npm' }
       - run: npm ci
       - run: npm test
+      - name: npm audit (backend, chỉ thư viện chạy thật)
+        run: npm audit --omit=dev --audit-level=high
+        continue-on-error: true   # zod GHSA-mrhx-c7xc-m3w5: chưa nâng v4; bỏ dòng này khi đã nâng
+
+  frontend:
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: src/frontend
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+          cache: 'npm'
+          cache-dependency-path: src/frontend/package-lock.json
+      - run: npm ci
+      - run: npm test
+      - run: npm audit --omit=dev --audit-level=high
+
+  secret-scan:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      - uses: gitleaks/gitleaks-action@v2
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
